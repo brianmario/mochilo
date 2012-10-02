@@ -4,6 +4,7 @@ $LOAD_PATH.unshift "#{ROOT_DIR}/lib"
 
 require 'test/unit'
 require 'mochilo'
+require 'msgpack'
 require 'pp'
 require 'benchmark'
 
@@ -32,12 +33,13 @@ class MochiloUnpackTest < Test::Unit::TestCase
     "\x91\x00",
   ]
 
+  def xtest_crossplatform
+    binary = IO.read("#{ROOT_DIR}/test/assets/cases.mpac")
+    puts Mochilo.unpack(binary)
+  end
+
   def test_benchmark
     binary = IO.read("#{ROOT_DIR}/test/assets/1mb.bin")
-    puts Benchmark.measure {
-      1000.times do
-        Mochilo.unpack(binary)
-      end
-    }
+    pp Mochilo.unpack(binary).size
   end
 end

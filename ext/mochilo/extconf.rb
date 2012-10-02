@@ -1,6 +1,6 @@
 require 'mkmf'
 
-$CFLAGS += ' -fvisibility=hidden -O0'
+$CFLAGS += ' -fvisibility=hidden'
 
 dir_config('mochilo')
 create_makefile('mochilo')
