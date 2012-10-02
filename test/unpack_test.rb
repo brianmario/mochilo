@@ -40,6 +40,17 @@ class MochiloUnpackTest < Test::Unit::TestCase
 
   def test_benchmark
     binary = IO.read("#{ROOT_DIR}/test/assets/255k.bin")
-    pp Mochilo.unpack(binary).size
+    Benchmark.bmbm do |x|
+      x.report 'MessagePack' do
+        100.times do
+          MessagePack.unpack(binary)
+        end
+      end
+      x.report 'Mochilo' do
+        100.times do
+          Mochilo.unpack(binary)
+        end
+      end
+    end
   end
 end
