@@ -45,6 +45,15 @@ static inline void msgpacker_swap64(unsigned char *buffer, size_t len, void *out
 }
 /* #endif */
 
+#define msgpacker__decode_uint16 msgpacker_swap16
+#define msgpacker__decode_int16  msgpacker_swap16
+#define msgpacker__decode_uint32 msgpacker_swap32
+#define msgpacker__decode_int32  msgpacker_swap32
+#define msgpacker__decode_uint64 msgpacker_swap64
+#define msgpacker__decode_int64  msgpacker_swap64
+#define msgpacker__decode_float  msgpacker_swap32
+#define msgpacker__decode_double msgpacker_swap64
+
 static inline void msgpacker__decode_uint8(unsigned char *buffer, size_t len, uint8_t *out) {
   if (len > 0) {
     unsigned char *risky = (unsigned char *)out;
@@ -57,38 +66,6 @@ static inline void msgpacker__decode_int8(unsigned char *buffer, size_t len, int
     unsigned char *risky = (unsigned char *)out;
     risky[0] = buffer[0];
   }
-}
-
-static inline void msgpacker__decode_uint16(unsigned char *buffer, size_t len, uint16_t *out) {
-  msgpacker_swap16(buffer, len, out);
-}
-
-static inline void msgpacker__decode_int16(unsigned char *buffer, size_t len, int16_t *out) {
-  msgpacker_swap16(buffer, len, out);
-}
-
-static inline void msgpacker__decode_uint32(unsigned char *buffer, size_t len, uint32_t *out) {
-  msgpacker_swap32(buffer, len, out);
-}
-
-static inline void msgpacker__decode_int32(unsigned char *buffer, size_t len, int32_t *out) {
-  msgpacker_swap32(buffer, len, out);
-}
-
-static inline void msgpacker__decode_uint64(unsigned char *buffer, size_t len, uint64_t *out) {
-  msgpacker_swap64(buffer, len, out);
-}
-
-static inline void msgpacker__decode_int64(unsigned char *buffer, size_t len, int64_t *out) {
-  msgpacker_swap64(buffer, len, out);
-}
-
-static inline void msgpacker__decode_float(unsigned char *buffer, size_t len, float *out) {
-  msgpacker_swap32(buffer, len, out);
-}
-
-static inline void msgpacker__decode_double(unsigned char *buffer, size_t len, double *out) {
-  msgpacker_swap64(buffer, len, out);
 }
 
 static inline void msgpacker__decode_raw16(unsigned char *buffer, size_t len, unsigned char *out, uint16_t out_len) {
