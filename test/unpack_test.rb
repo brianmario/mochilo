@@ -5,6 +5,7 @@ $LOAD_PATH.unshift "#{ROOT_DIR}/lib"
 require 'test/unit'
 require 'mochilo'
 require 'pp'
+require 'benchmark'
 
 class MochiloUnpackTest < Test::Unit::TestCase
 
@@ -31,8 +32,12 @@ class MochiloUnpackTest < Test::Unit::TestCase
     "\x91\x00",
   ]
 
-  def test_binary_file
-    binary = IO.read("#{ROOT_DIR}/test/assets/48byte.bin")
-    pp Mochilo.unpack(binary)
+  def test_benchmark
+    binary = IO.read("#{ROOT_DIR}/test/assets/1mb.bin")
+    puts Benchmark.measure {
+      1000.times do
+        Mochilo.unpack(binary)
+      end
+    }
   end
 end

@@ -4,6 +4,7 @@
 #include <string.h>
 
 #define MOAPI static inline
+#define unlikely(x)     __builtin_expect((x),0)
 
 #include "mochilo.h"
 #include "mochilo_api.h"
@@ -53,7 +54,7 @@ static inline int unpack_array(mo_value *_array, size_t elements, struct mochilo
 	for (i = 0; i < elements; ++i) {
 		mo_value element;
 
-		if ((error = mochilo_unpack_one(&element, buf)) < 0)
+		if ((error = mochilo_unpack_one(&element, buf, opaque)) < 0)
 			return error;
 
 		moapi_array_append(array, element, opaque);
@@ -73,10 +74,10 @@ static inline int unpack_hash(mo_value *_hash, size_t elements, struct mochilo_b
 	for (i = 0; i < elements; ++i) {
 		mo_value key, value;
 
-		if ((error = mochilo_unpack_one(&key, buf)) < 0)
+		if ((error = mochilo_unpack_one(&key, buf, opaque)) < 0)
 			return error;
 
-		if ((error = mochilo_unpack_one(&value, buf)) < 0)
+		if ((error = mochilo_unpack_one(&value, buf, opaque)) < 0)
 			return error;
 
 		moapi_hash_set(hash, key, value, opaque);
@@ -86,12 +87,8 @@ static inline int unpack_hash(mo_value *_hash, size_t elements, struct mochilo_b
 	return 0;
 }
 
-int mochilo_unpack_one(mo_value *_value, struct mochilo_buf *buf, void *opaque)
-{
-	uint8_t leader;
-
 #define WARD_BYTES(n) \
-	if (buf->ptr + n > buf->end) { return -2; }
+	if (unlikely(buf->ptr + n > buf->end)) { return -2; }
 
 #define UNPACK_INT(sign, bits) { \
 	sign##bits##_t integer; \
@@ -101,6 +98,10 @@ int mochilo_unpack_one(mo_value *_value, struct mochilo_buf *buf, void *opaque)
 	*_value = moapi_##sign##bits##_new(integer, leader, opaque); \
 	return 0; \
 }
+
+int mochilo_unpack_one(mo_value *_value, struct mochilo_buf *buf, void *opaque)
+{
+	uint8_t leader;
 
 	WARD_BYTES(1);
 	leader = *(buf->ptr)++;
@@ -236,12 +237,22 @@ int mochilo_unpack_one(mo_value *_value, struct mochilo_buf *buf, void *opaque)
 
 		default:
 		{
-			if ((leader & 0x80) == 0x0 || (leader & 0xe0) == 0xe0) {
+			if (leader < 0x80 || leader >= 0xe0) {
 				*_value = moapi_int8_new((int8_t)leader, MSGPACK_T_INT8, opaque);
 				return 0;
 			}
 
-			else if ((leader & 0xa0) == 0xa0) {
+			else if (leader < 0x90) {
+				uint8_t length = leader & (~0x80);
+				return unpack_hash(_value, length, buf, opaque);
+			}
+
+			else if (leader < 0xa0) {
+				uint8_t length = leader & (~0x90);
+				return unpack_array(_value, length, buf, opaque);
+			}
+
+			else if (leader < 0xc0) { 
 				uint8_t length = leader & (~0xa0);
 
 				WARD_BYTES(length);
@@ -249,16 +260,6 @@ int mochilo_unpack_one(mo_value *_value, struct mochilo_buf *buf, void *opaque)
 				buf->ptr += length;
 
 				return 0;
-			}
-
-			else if ((leader & 0x90) == 0x90) {
-				uint8_t length = leader & (~0x90);
-				return unpack_array(_value, length, buf, opaque);
-			}
-
-			else if ((leader & 0x80) == 0x80) {
-				uint8_t length = leader & (~0x80);
-				return unpack_hash(_value, length, buf, opaque);
 			}
 
 			return -1;

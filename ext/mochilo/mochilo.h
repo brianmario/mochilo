@@ -33,6 +33,6 @@ struct mochilo_buf {
 	const uint8_t *end;
 };
 
-int mochilo_unpack_one(mo_value *_value, struct mochilo_buf *buf, void *opaque)
+int mochilo_unpack_one(mo_value *_value, struct mochilo_buf *buf, void *opaque);
 
 #endif

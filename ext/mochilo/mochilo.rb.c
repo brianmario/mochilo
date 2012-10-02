@@ -33,7 +33,7 @@ static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
 	buf.ptr = RSTRING_PTR(rb_buffer);
 	buf.end = buf.ptr + RSTRING_LEN(rb_buffer);
 
-	error = mochilo_unpack_one(&rb_result, &buf, NULL);
+	error = mochilo_unpack_one((mo_value)&rb_result, &buf, NULL);
 
 	if (error < 0)
 		rb_raise(rb_eRuntimeError, "unpack failed (%d)", error);
