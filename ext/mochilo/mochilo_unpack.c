@@ -3,9 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MOAPI static inline
-#define unlikely(x)     __builtin_expect((x),0)
-
 #include "mochilo.h"
 #include "mochilo_api.h"
 

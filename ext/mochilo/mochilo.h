@@ -3,6 +3,9 @@
 
 #include <ctype.h>
 
+#define MOAPI static inline
+#define unlikely(x)     __builtin_expect((x),0)
+
 enum msgpack_t {
 	MSGPACK_T_NIL = 0xc0,
 	MSGPACK_T_FALSE = 0xc2,
