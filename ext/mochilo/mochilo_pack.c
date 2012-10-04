@@ -76,6 +76,23 @@ void mochilo_pack_fixnum(mochilo_buf *buf, VALUE rb_fixnum)
 	}
 }
 
+void mochilo_pack_bignum(mochilo_buf *buf, VALUE rb_bignum)
+{
+	if(RBIGNUM_POSITIVE_P(rb_bignum)) {
+		uint64_t bignum;
+		bignum = rb_big2ull(rb_bignum);
+
+		mochilo_buf_putc(buf, MSGPACK_T_UINT64);
+		pack_64(buf, &bignum);
+	} else {
+		int64_t bignum;
+		bignum = rb_big2ll(rb_bignum);
+
+		mochilo_buf_putc(buf, MSGPACK_T_INT64);
+		pack_64(buf, &bignum);
+	}
+}
+
 
 static int hash_callback(VALUE key, VALUE val, VALUE opaque)
 {
@@ -180,6 +197,10 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 
 		case T_FIXNUM:
 			mochilo_pack_fixnum(buf, rb_object);
+			return;
+
+		case T_BIGNUM:
+			mochilo_pack_bignum(buf, rb_object);
 			return;
 
 		case T_STRING:
