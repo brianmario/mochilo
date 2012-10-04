@@ -2,6 +2,7 @@
 #define __MOCHILO_H__
 
 #include <ctype.h>
+#include "buffer.h"
 
 #define MOAPI static inline
 #define unlikely(x)     __builtin_expect((x),0)
@@ -31,11 +32,11 @@ enum msgpack_t {
 typedef void * mo_value;
 typedef uint64_t mo_integer;
 
-struct mochilo_buf {
+struct mochilo_parse_buf {
 	const uint8_t *ptr;
 	const uint8_t *end;
 };
 
-int mochilo_unpack_one(mo_value *_value, struct mochilo_buf *buf, void *opaque);
+int mochilo_unpack_one(mo_value *_value, struct mochilo_parse_buf *buf, void *opaque);
 
 #endif

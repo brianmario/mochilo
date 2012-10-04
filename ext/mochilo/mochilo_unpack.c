@@ -7,7 +7,7 @@
 #include "intern.h"
 #include "mochilo_api.h"
 
-static inline int unpack_array(mo_value *_array, size_t elements, struct mochilo_buf *buf, void *opaque)
+static inline int unpack_array(mo_value *_array, size_t elements, struct mochilo_parse_buf *buf, void *opaque)
 {
 	size_t i;
 	int error;
@@ -27,7 +27,7 @@ static inline int unpack_array(mo_value *_array, size_t elements, struct mochilo
 	return 0;
 }
 
-static inline int unpack_hash(mo_value *_hash, size_t elements, struct mochilo_buf *buf, void *opaque)
+static inline int unpack_hash(mo_value *_hash, size_t elements, struct mochilo_parse_buf *buf, void *opaque)
 {
 	size_t i;
 	int error;
@@ -62,7 +62,7 @@ static inline int unpack_hash(mo_value *_hash, size_t elements, struct mochilo_b
 	return 0; \
 }
 
-int mochilo_unpack_one(mo_value *_value, struct mochilo_buf *buf, void *opaque)
+int mochilo_unpack_one(mo_value *_value, struct mochilo_parse_buf *buf, void *opaque)
 {
 	uint8_t leader;
 

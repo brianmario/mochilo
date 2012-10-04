@@ -21,10 +21,11 @@
 #include "mochilo.h"
 
 static VALUE rb_mMochilo;
+extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
 
 static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
 {
-	struct mochilo_buf buf;
+	struct mochilo_parse_buf buf;
 	VALUE rb_result;
 	int error;
 
