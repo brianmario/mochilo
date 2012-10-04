@@ -78,8 +78,7 @@ static inline bool mochilo_buf_oom(const mochilo_buf *buf)
  * mochilo_buf_oom at the end.
  */
 int mochilo_buf_putc(mochilo_buf *buf, char c);
-int mochilo_buf_put(mochilo_buf *buf, const char *data, size_t len);
-#define mochilo_buf_append mochilo_buf_put
+int mochilo_buf_append(mochilo_buf *buf, const char *data, size_t len);
 void mochilo_buf_clear(mochilo_buf *buf);
 void mochilo_buf_consume(mochilo_buf *buf, const char *end);
 

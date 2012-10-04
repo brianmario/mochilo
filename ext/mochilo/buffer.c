@@ -105,7 +105,7 @@ int mochilo_buf_putc(mochilo_buf *buf, char c)
   return 0;
 }
 
-int mochilo_buf_put(mochilo_buf *buf, const char *data, size_t len)
+int mochilo_buf_append(mochilo_buf *buf, const char *data, size_t len)
 {
   ENSURE_SIZE(buf, buf->size + len + 1);
   memmove(buf->ptr + buf->size, data, len);
