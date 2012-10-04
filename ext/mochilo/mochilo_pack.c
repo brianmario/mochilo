@@ -5,32 +5,33 @@
 
 #include "mochilo.h"
 #include "intern.h"
+#include "buffer.h"
 #include <ruby.h>
 
-void mochilo_pack_one(struct mochilo_buf *buf, VALUE rb_object);
+void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
 
-static void pack_64(struct mochilo_buf *buf, const void *fixnum64)
+static void pack_64(mochilo_buf *buf, const void *fixnum64)
 {
 	uint8_t be[8];
 	swap64(be, fixnum64);
-	mochilo_buf_append(buf, be, sizeof(be));
+	mochilo_buf_append(buf, &be[0], sizeof(be));
 }
 
-static void pack_32(struct mochilo_buf *buf, const void *fixnum32)
+static void pack_32(mochilo_buf *buf, const void *fixnum32)
 {
 	uint8_t be[4];
 	swap32(be, fixnum32);
-	mochilo_buf_append(buf, be, sizeof(be));
+	mochilo_buf_append(buf, &be[0], sizeof(be));
 }
 
-static void pack_16(struct mochilo_buf *buf, const void *fixnum16)
+static void pack_16(mochilo_buf *buf, const void *fixnum16)
 {
 	uint8_t be[2];
 	swap16(be, fixnum16);
-	mochilo_buf_append(buf, be, sizeof(be));
+	mochilo_buf_append(buf, &be[0], sizeof(be));
 }
 
-void mochilo_pack_fixnum(struct mochilo_buf *buf, VALUE rb_fixnum)
+void mochilo_pack_fixnum(mochilo_buf *buf, VALUE rb_fixnum)
 {
 	long fixnum = FIX2INT(rb_fixnum);
 
@@ -45,20 +46,20 @@ void mochilo_pack_fixnum(struct mochilo_buf *buf, VALUE rb_fixnum)
 
 static int hash_callback(VALUE key, VALUE val, VALUE opaque)
 {
-	struct mochilo_buf *buf = (struct mochilo_buf *)opaque;
+	mochilo_buf *buf = (mochilo_buf *)opaque;
 	mochilo_pack_one(buf, key);
 	mochilo_pack_one(buf, val);
 	return 0;
 }
 
-void mochilo_pack_double(struct mochilo_buf *buf, VALUE rb_double)
+void mochilo_pack_double(mochilo_buf *buf, VALUE rb_double)
 {
 	double d = RFLOAT_VALUE(rb_double);
 	mochilo_buf_putc(buf, MSGPACK_T_DOUBLE);
 	pack_64(buf, &d);
 }
 
-void mochilo_pack_hash(struct mochilo_buf *buf, VALUE rb_hash)
+void mochilo_pack_hash(mochilo_buf *buf, VALUE rb_hash)
 {
 	long size = RHASH_SIZE(rb_hash);
 
@@ -81,7 +82,7 @@ void mochilo_pack_hash(struct mochilo_buf *buf, VALUE rb_hash)
 	rb_hash_foreach(rb_hash, &hash_callback, (VALUE)buf);
 }
 
-void mochilo_pack_bytes(struct mochilo_buf *buf, VALUE rb_bytes)
+void mochilo_pack_bytes(mochilo_buf *buf, VALUE rb_bytes)
 {
 	long size = RSTRING_LEN(rb_bytes);
 
@@ -104,7 +105,7 @@ void mochilo_pack_bytes(struct mochilo_buf *buf, VALUE rb_bytes)
 	mochilo_buf_append(buf, RSTRING_PTR(rb_bytes), size);
 }
 
-void mochilo_pack_array(struct mochilo_buf *buf, VALUE rb_array)
+void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array)
 {
 	long i, size = RARRAY_LEN(rb_array);
 
@@ -129,7 +130,7 @@ void mochilo_pack_array(struct mochilo_buf *buf, VALUE rb_array)
 	}
 }
 
-void mochilo_pack_one(struct mochilo_buf *buf, VALUE rb_object)
+void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 {
 	switch (rb_type(rb_object)) {
 		case T_NIL:
