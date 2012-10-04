@@ -13,21 +13,21 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
 static void pack_64(mochilo_buf *buf, const void *fixnum64)
 {
 	uint8_t be[8];
-	swap64(be, fixnum64);
+	swap64(fixnum64, be);
 	mochilo_buf_append(buf, &be[0], sizeof(be));
 }
 
 static void pack_32(mochilo_buf *buf, const void *fixnum32)
 {
 	uint8_t be[4];
-	swap32(be, fixnum32);
+	swap32(fixnum32, be);
 	mochilo_buf_append(buf, &be[0], sizeof(be));
 }
 
 static void pack_16(mochilo_buf *buf, const void *fixnum16)
 {
 	uint8_t be[2];
-	swap16(be, fixnum16);
+	swap16(fixnum16, be);
 	mochilo_buf_append(buf, &be[0], sizeof(be));
 }
 
