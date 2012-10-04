@@ -33,14 +33,47 @@ static void pack_16(mochilo_buf *buf, const void *fixnum16)
 
 void mochilo_pack_fixnum(mochilo_buf *buf, VALUE rb_fixnum)
 {
-	long fixnum = FIX2INT(rb_fixnum);
+	long fixnum = NUM2LONG(rb_fixnum);
 
-#ifdef MOCHILO_PACK_TIGHT
-	/* todo */
-#else
-	mochilo_buf_putc(buf, MSGPACK_T_INT32);
-	pack_32(buf, &fixnum);
-#endif
+	if(fixnum < -0x20L) {
+		if(fixnum < -0x8000L) {
+			if(fixnum < -0x80000000L) {
+				mochilo_buf_putc(buf, MSGPACK_T_INT64);
+				pack_64(buf, &fixnum);
+			} else {
+				mochilo_buf_putc(buf, MSGPACK_T_INT32);
+				pack_32(buf, &fixnum);
+			}
+		} else {
+			if(fixnum < -0x80L) {
+				mochilo_buf_putc(buf, MSGPACK_T_INT16);
+				pack_16(buf, &fixnum);
+			} else {
+				mochilo_buf_putc(buf, MSGPACK_T_INT8);
+				mochilo_buf_putc(buf, (uint8_t)fixnum);
+			}
+		}
+	} else if(fixnum <= 0x7fL) {
+		mochilo_buf_putc(buf, (uint8_t)fixnum);
+	} else {
+		if(fixnum <= 0xffffL) {
+			if(fixnum <= 0xffL) {
+				mochilo_buf_putc(buf, MSGPACK_T_UINT8);
+				mochilo_buf_putc(buf, (uint8_t)fixnum);
+			} else {
+				mochilo_buf_putc(buf, MSGPACK_T_UINT16);
+				pack_16(buf, &fixnum);
+			}
+		} else {
+			if(fixnum <= 0xffffffffL) {
+				mochilo_buf_putc(buf, MSGPACK_T_UINT32);
+				pack_32(buf, &fixnum);
+			} else {
+				mochilo_buf_putc(buf, MSGPACK_T_UINT64);
+				pack_64(buf, &fixnum);
+			}
+		}
+	}
 }
 
 
