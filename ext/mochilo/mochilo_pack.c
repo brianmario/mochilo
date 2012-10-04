@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "mochilo.h"
+#include "intern.h"
 #include <ruby.h>
 
 void mochilo_pack_one(struct mochilo_buf *buf, VALUE rb_object);
