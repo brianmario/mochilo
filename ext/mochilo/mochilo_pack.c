@@ -5,8 +5,8 @@
 
 #include "mochilo.h"
 #include "intern.h"
-#include "buffer.h"
 #include <ruby.h>
+#include <st.h>
 
 void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
 

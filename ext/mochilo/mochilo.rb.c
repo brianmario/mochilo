@@ -42,9 +42,26 @@ static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
 	return rb_result;
 }
 
+static VALUE rb_mochilo_pack(VALUE self, VALUE rb_obj)
+{
+	mochilo_buf buf;
+	VALUE rb_result;
+	int error;
+
+	mochilo_buf_init(&buf, 1024);
+
+	mochilo_pack_one(&buf, rb_obj);
+
+	rb_result = rb_str_new(buf.ptr, buf.size);
+	mochilo_buf_free(&buf);
+
+	return rb_result;
+}
+
 void __attribute__ ((visibility ("default"))) Init_mochilo()
 {
 	rb_mMochilo = rb_define_module("Mochilo");
 	rb_define_method(rb_mMochilo, "unpack", rb_mochilo_unpack, 1);
+	rb_define_method(rb_mMochilo, "pack", rb_mochilo_pack, 1);
 }
 
