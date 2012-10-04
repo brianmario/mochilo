@@ -215,7 +215,7 @@ int mochilo_unpack_one(mo_value *_value, struct mochilo_buf *buf, void *opaque)
 				return unpack_array(_value, length, buf, opaque);
 			}
 
-			else if (leader < 0xc0) { 
+			else if (leader < 0xc0) {
 				uint8_t length = leader & (~0xa0);
 
 				WARD_BYTES(length);
