@@ -8,6 +8,29 @@ require 'msgpack'
 require 'pp'
 require 'benchmark'
 
+class CrossPlatformTest < Test::Unit::TestCase
+  CASES = [
+    false, true, nil,
+    0,0,0,0,0,0,0,0,0,
+    -1,-1,-1,-1,-1,
+    127,127,255,65535,4294967295,
+    -32,-32,-128,-32768,-2147483648,
+    0.0,-0.0,1.0,-1.0,
+    "a","a","a",
+    "","","",
+    [0],[0],[0],
+    [],[],[],
+    {},{},{},
+    {"a" => 97}, {"a" => 97}, {"a" => 97},
+    [[]], [["a"]]
+  ]
+
+  def test_cross_plat
+    binary = IO.read("#{ROOT_DIR}/test/assets/cases.mpac")
+  end
+end
+
+
 class MochiloPackTest < Test::Unit::TestCase
 
   OBJECTS = [
@@ -42,7 +65,6 @@ class MochiloPackTest < Test::Unit::TestCase
 end
 
 class MochiloUnpackTest < Test::Unit::TestCase
-
   BUFFERS = [
     "\xCC\x80",
     "\xCD\x04\xD2",
@@ -55,7 +77,6 @@ class MochiloUnpackTest < Test::Unit::TestCase
     "\xC0",
     "\xC3",
     "\xC2",
-    "\xCA@\x93J=",
     "\xCB@\x93J=p\xA3\xD7\n",
     "\xDA\x00\x01\x61",
     "\xDB\x00\x00\x00\x01\x61",
@@ -70,23 +91,8 @@ class MochiloUnpackTest < Test::Unit::TestCase
     BUFFERS.each do |buf|
       a = Mochilo.unpack(buf)
       b = Mochilo.pack(a)
-      assert_equal buf, b
-    end
-  end
-
-  def xtest_benchmark
-    binary = IO.read("#{ROOT_DIR}/test/assets/255k.bin")
-    Benchmark.bmbm do |x|
-      x.report 'MessagePack' do
-        100.times do
-          MessagePack.unpack(binary)
-        end
-      end
-      x.report 'Mochilo' do
-        100.times do
-          Mochilo.unpack(binary)
-        end
-      end
+      c = Mochilo.unpack(b)
+      assert_equal a, c
     end
   end
 end
