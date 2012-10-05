@@ -203,5 +203,8 @@ void __attribute__ ((visibility ("default"))) Init_mochilo()
 
 	rb_define_method(rb_cMochiloPacker, "<<", rb_mochilo_packer_write, 1);
 	rb_define_method(rb_cMochiloPacker, "flush", rb_mochilo_packer_flush, 0);
+
+	rb_cMochiloUnpacker = rb_define_class_under(rb_mMochilo, "Unpacker", rb_cObject);
+	rb_define_singleton_method(rb_cMochiloUnpacker, "new", rb_mochilo_unpacker_new, -1);
 }
 
