@@ -7,67 +7,63 @@
 #include "intern.h"
 #include "mochilo_api.h"
 
-static inline int unpack_array(mo_value *_array, size_t elements, struct mochilo_parse_buf *buf, void *opaque)
+static inline int unpack_array(mo_value *_array, size_t elements, mochilo_src *buf)
 {
 	size_t i;
 	int error;
 
-	mo_value array = moapi_array_new(elements, opaque);
+	mo_value array = moapi_array_new(elements);
 
 	for (i = 0; i < elements; ++i) {
 		mo_value element;
 
-		if ((error = mochilo_unpack_one(&element, buf, opaque)) < 0)
+		if ((error = mochilo_unpack_one(&element, buf)) < 0)
 			return error;
 
-		moapi_array_append(array, element, opaque);
+		moapi_array_append(array, element);
 	}
 
 	*_array = array;
 	return 0;
 }
 
-static inline int unpack_hash(mo_value *_hash, size_t elements, struct mochilo_parse_buf *buf, void *opaque)
+static inline int unpack_hash(mo_value *_hash, size_t elements, mochilo_src *buf)
 {
 	size_t i;
 	int error;
 
-	mo_value hash = moapi_hash_new(opaque);
+	mo_value hash = moapi_hash_new();
 
 	for (i = 0; i < elements; ++i) {
 		mo_value key, value;
 
-		if ((error = mochilo_unpack_one(&key, buf, opaque)) < 0)
+		if ((error = mochilo_unpack_one(&key, buf)) < 0)
 			return error;
 
-		if ((error = mochilo_unpack_one(&value, buf, opaque)) < 0)
+		if ((error = mochilo_unpack_one(&value, buf)) < 0)
 			return error;
 
-		moapi_hash_set(hash, key, value, opaque);
+		moapi_hash_set(hash, key, value);
 	}
 
 	*_hash = hash;
 	return 0;
 }
 
-#define WARD_BYTES(n) \
-	if (unlikely(buf->ptr + n > buf->end)) { return -2; }
-
 #define UNPACK_INT(sign, bits) { \
 	sign##bits##_t integer; \
-	WARD_BYTES((bits / 8)); \
-	swap##bits(buf->ptr, &integer); \
-	buf->ptr += (bits / 8); \
-	*_value = moapi_##sign##bits##_new(integer, leader, opaque); \
+	SRC_ENSURE_AVAIL(src, (bits / 8)); \
+	mochilo_src_get##bits##be(src, &integer); \
+	*_value = moapi_##sign##bits##_new(integer, leader); \
 	return 0; \
 }
 
-int mochilo_unpack_one(mo_value *_value, struct mochilo_parse_buf *buf, void *opaque)
+int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 {
 	uint8_t leader;
 
-	WARD_BYTES(1);
-	leader = *(buf->ptr)++;
+	SRC_ENSURE_AVAIL(src, 1);
+	mochilo_src_get8be(src, &leader);
 
 	switch (leader) {
 		case MSGPACK_T_UINT8:
@@ -97,18 +93,17 @@ int mochilo_unpack_one(mo_value *_value, struct mochilo_parse_buf *buf, void *op
 		case MSGPACK_T_NIL:
 		case MSGPACK_T_TRUE:
 		case MSGPACK_T_FALSE:
-			*_value = moapi_atom_new(leader, opaque);
+			*_value = moapi_atom_new(leader);
 			return 0;
 
 		case MSGPACK_T_FLOAT:
 		{
 			float flt;
 
-			WARD_BYTES(4);
-			swap32(buf->ptr, &flt);
-			buf->ptr += 4;
+			SRC_ENSURE_AVAIL(src, 4);
+			mochilo_src_get32be(src, &flt);
 
-			*_value = moapi_float_new(flt, opaque);
+			*_value = moapi_float_new(flt);
 			return 0;
 		}
 
@@ -116,11 +111,10 @@ int mochilo_unpack_one(mo_value *_value, struct mochilo_parse_buf *buf, void *op
 		{
 			double flt;
 
-			WARD_BYTES(8);
-			swap64(buf->ptr, &flt);
-			buf->ptr += 8;
+			SRC_ENSURE_AVAIL(src, 8);
+			mochilo_src_get64be(src, &flt);
 
-			*_value = moapi_double_new(flt, opaque);
+			*_value = moapi_double_new(flt);
 			return 0;
 		}
 
@@ -128,107 +122,86 @@ int mochilo_unpack_one(mo_value *_value, struct mochilo_parse_buf *buf, void *op
 		{
 			uint16_t length;
 
-			WARD_BYTES(2);
-			swap16(buf->ptr, &length);
-			buf->ptr += 2;
+			SRC_ENSURE_AVAIL(src, 2);
+			mochilo_src_get16be(src, &length);
 
-			return unpack_array(_value, (size_t)length, buf, opaque);
+			return unpack_array(_value, (size_t)length, src);
 		}
 
 		case MSGPACK_T_ARRAY32:
 		{
 			uint32_t length;
 
-			WARD_BYTES(4);
-			swap32(buf->ptr, &length);
-			buf->ptr += 4;
+			SRC_ENSURE_AVAIL(src, 4);
+			mochilo_src_get32be(src, &length);
 
-			return unpack_array(_value, (size_t)length, buf, opaque);
+			return unpack_array(_value, (size_t)length, src);
 		}
 
 		case MSGPACK_T_MAP16:
 		{
 			uint16_t length;
 
-			WARD_BYTES(2);
-			swap16(buf->ptr, &length);
-			buf->ptr += 2;
+			SRC_ENSURE_AVAIL(src, 2);
+			mochilo_src_get16be(src, &length);
 
-			return unpack_hash(_value, (size_t)length, buf, opaque);
+			return unpack_hash(_value, (size_t)length, src);
 		}
 
 		case MSGPACK_T_MAP32:
 		{
 			uint32_t length;
 
-			WARD_BYTES(4);
-			swap32(buf->ptr, &length);
-			buf->ptr += 4;
+			SRC_ENSURE_AVAIL(src, 4);
+			mochilo_src_get32be(src, &length);
 
-			return unpack_hash(_value, (size_t)length, buf, opaque);
+			return unpack_hash(_value, (size_t)length, src);
 		}
 
 		case MSGPACK_T_RAW16:
 		{
 			uint16_t length;
 
-			WARD_BYTES(2);
-			swap16(buf->ptr, &length);
-			buf->ptr += 2;
+			SRC_ENSURE_AVAIL(src, 2);
+			mochilo_src_get16be(src, &length);
 
-			WARD_BYTES(length);
-			*_value = moapi_bytes_new(buf->ptr, (size_t)length, opaque);
-			buf->ptr += length;
-
-			return 0;
+			return moapi_bytes_new(_value, src, length);
 		}
 
 		case MSGPACK_T_RAW32:
 		{
 			uint32_t length;
 
-			WARD_BYTES(4);
-			swap32(buf->ptr, &length);
-			buf->ptr += 4;
+			SRC_ENSURE_AVAIL(src, 4);
+			mochilo_src_get32be(src, &length);
 
-			WARD_BYTES(length);
-			*_value = moapi_bytes_new(buf->ptr, (size_t)length, opaque);
-			buf->ptr += length;
-
-			return 0;
+			return moapi_bytes_new(_value, src, length);
 		}
 
 		default:
 		{
 			if (leader < 0x80 || leader >= 0xe0) {
-				*_value = moapi_int8_new((int8_t)leader, MSGPACK_T_INT8, opaque);
+				*_value = moapi_int8_new((int8_t)leader, MSGPACK_T_INT8);
 				return 0;
 			}
 
 			else if (leader < 0x90) {
 				uint8_t length = leader & (~0x80);
-				return unpack_hash(_value, length, buf, opaque);
+				return unpack_hash(_value, length, src);
 			}
 
 			else if (leader < 0xa0) {
 				uint8_t length = leader & (~0x90);
-				return unpack_array(_value, length, buf, opaque);
+				return unpack_array(_value, length, src);
 			}
 
 			else if (leader < 0xc0) {
 				uint8_t length = leader & (~0xa0);
-
-				WARD_BYTES(length);
-				*_value = moapi_bytes_new(buf->ptr, length, opaque);
-				buf->ptr += length;
-
-				return 0;
+				return moapi_bytes_new(_value, src, length);
 			}
 
 			return -1;
 		}
 	}
-
-#undef WARD_BYTES
 }
 

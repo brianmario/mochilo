@@ -55,6 +55,13 @@ typedef struct {
 	void *opaque;
 } mochilo_buf;
 
+typedef struct {
+	char *ptr;
+	size_t pos, avail, alloc;
+	int (*refill)(char *, size_t, void *);
+	void *opaque;
+} mochilo_src;
+
 void mochilo_buf_init(mochilo_buf *buf,
 	size_t buffer_size,
 	int (*flush)(const char *data, size_t len, void *opaque),
@@ -64,39 +71,64 @@ void mochilo_buf_free(mochilo_buf *buf);
 int mochilo_buf_put(mochilo_buf *buf, const char *data, size_t len);
 int mochilo_buf_flush(mochilo_buf *buf);
 
-#define BUF_ENSURE_SIZE(b, d) \
-  if ((d) > buf->asize && mochilo_buf_flush(b) < 0)\
-    return -1;
+void mochilo_src_init_static(mochilo_src *buf, uint8_t *data, size_t len);
 
-static inline int mochilo_buf_putc(mochilo_buf *buf, uint8_t c)
+#define BUF_ENSURE_AVAIL(b, d) \
+	if (b->size + (d) > b->asize && mochilo_buf_flush(b) < 0)\
+		return;
+
+#define SRC_ENSURE_AVAIL(src, bytes) \
+	if (src->pos + bytes > src->avail && mochilo_src_refill(src, bytes) < 0) \
+		return -1;
+
+static inline void mochilo_buf_putc(mochilo_buf *buf, uint8_t c)
 {
-	BUF_ENSURE_SIZE(buf, buf->size + 1);
+	BUF_ENSURE_AVAIL(buf, 1);
 	buf->ptr[buf->size++] = c;
-	return 0;
 }
 
-static inline int mochilo_buf_put16be(mochilo_buf *buf, void *src16)
+static inline void mochilo_buf_put16be(mochilo_buf *buf, void *src16)
 {
-	BUF_ENSURE_SIZE(buf, buf->size + 2);
+	BUF_ENSURE_AVAIL(buf, 2);
 	swap16(src16, buf->ptr + buf->size);
 	buf->size += 2;
-	return 0;
 }
 
-static inline int mochilo_buf_put32be(mochilo_buf *buf, void *src32)
+static inline void mochilo_buf_put32be(mochilo_buf *buf, void *src32)
 {
-	BUF_ENSURE_SIZE(buf, buf->size + 4);
+	BUF_ENSURE_AVAIL(buf, 4);
 	swap32(src32, buf->ptr + buf->size);
 	buf->size += 4;
-	return 0;
 }
 
-static inline int mochilo_buf_put64be(mochilo_buf *buf, void *src64)
+static inline void mochilo_buf_put64be(mochilo_buf *buf, void *src64)
 {
-	BUF_ENSURE_SIZE(buf, buf->size + 8);
+	BUF_ENSURE_AVAIL(buf, 8);
 	swap64(src64, buf->ptr + buf->size);
 	buf->size += 8;
-	return 0;
+}
+
+static inline void mochilo_src_get8be(mochilo_src *buf, uint8_t *dst8)
+{
+	*dst8 = buf->ptr[buf->pos++];
+}
+
+static inline void mochilo_src_get16be(mochilo_src *buf, void *dst16)
+{
+	swap16(buf->ptr + buf->pos, dst16);
+	buf->pos += 2;
+}
+
+static inline void mochilo_src_get32be(mochilo_src *buf, void *dst32)
+{
+	swap32(buf->ptr + buf->pos, dst32);
+	buf->pos += 4;
+}
+
+static inline void mochilo_src_get64be(mochilo_src *buf, void *dst64)
+{
+	swap64(buf->ptr + buf->pos, dst64);
+	buf->pos += 8;
 }
 
 #endif

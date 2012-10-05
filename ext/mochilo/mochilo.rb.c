@@ -26,17 +26,15 @@ extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
 
 static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
 {
-	struct mochilo_parse_buf buf;
 	VALUE rb_result;
-	int error;
+	int error = -1;
+	mochilo_src source;
 
 	Check_Type(rb_buffer, T_STRING);
 
-	buf.ptr = RSTRING_PTR(rb_buffer);
-	buf.end = buf.ptr + RSTRING_LEN(rb_buffer);
+	mochilo_src_init_static(&source, RSTRING_PTR(rb_buffer), RSTRING_LEN(rb_buffer));
 
-	error = mochilo_unpack_one((mo_value)&rb_result, &buf, NULL);
-
+	error = mochilo_unpack_one((mo_value)&rb_result, &source);
 	if (error < 0)
 		rb_raise(rb_eRuntimeError, "unpack failed (%d)", error);
 
