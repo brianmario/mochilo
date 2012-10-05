@@ -99,6 +99,7 @@ static VALUE rb_mochilo_unpacker_new(int argc, VALUE *argv, VALUE self)
 static VALUE rb_mochilo_unpacker_each(VALUE self)
 {
 	mochilo_src *source;
+	int error = -1;
 	VALUE rb_result;
 
 	if (!rb_block_given_p())
