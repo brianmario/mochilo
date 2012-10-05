@@ -8,6 +8,32 @@ require 'msgpack'
 require 'pp'
 require 'benchmark'
 
+class MochiloPackTest < Test::Unit::TestCase
+
+  OBJECTS = [
+    {"hello" => "world"},
+    12345,
+    -12345,
+    "hey this is a test",
+    0.231
+  ]
+
+  def test_simple_pack
+    OBJECTS.each do |obj|
+      a = Mochilo.pack(obj)
+      pp a
+      b = Mochilo.unpack(a)
+      #assert_equal obj, b
+    end
+  end
+
+  def test_block_pack
+    packer = Mochilo::Packer.new { |bytes| pp bytes }
+    OBJECTS.each { |obj| packer << obj }
+    packer.flush
+  end
+end
+
 class MochiloUnpackTest < Test::Unit::TestCase
 
   BUFFERS = [
@@ -38,7 +64,7 @@ class MochiloUnpackTest < Test::Unit::TestCase
     puts Mochilo.unpack(binary)
   end
 
-  def test_benchmark
+  def xtest_benchmark
     binary = IO.read("#{ROOT_DIR}/test/assets/255k.bin")
     Benchmark.bmbm do |x|
       x.report 'MessagePack' do

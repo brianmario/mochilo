@@ -78,7 +78,7 @@ static inline int mochilo_buf_putc(mochilo_buf *buf, uint8_t c)
 static inline int mochilo_buf_put16be(mochilo_buf *buf, void *src16)
 {
 	BUF_ENSURE_SIZE(buf, buf->size + 2);
-	swap16(src16, buf->ptr);
+	swap16(src16, buf->ptr + buf->size);
 	buf->size += 2;
 	return 0;
 }
@@ -86,7 +86,7 @@ static inline int mochilo_buf_put16be(mochilo_buf *buf, void *src16)
 static inline int mochilo_buf_put32be(mochilo_buf *buf, void *src32)
 {
 	BUF_ENSURE_SIZE(buf, buf->size + 4);
-	swap32(src32, buf->ptr);
+	swap32(src32, buf->ptr + buf->size);
 	buf->size += 4;
 	return 0;
 }
@@ -94,7 +94,7 @@ static inline int mochilo_buf_put32be(mochilo_buf *buf, void *src32)
 static inline int mochilo_buf_put64be(mochilo_buf *buf, void *src64)
 {
 	BUF_ENSURE_SIZE(buf, buf->size + 8);
-	swap64(src64, buf->ptr);
+	swap64(src64, buf->ptr + buf->size);
 	buf->size += 8;
 	return 0;
 }
