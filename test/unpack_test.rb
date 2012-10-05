@@ -27,8 +27,7 @@ class CrossPlatformTest < Test::Unit::TestCase
   ]
 
   def test_cross_plat
-    binary = IO.read("#{ROOT_DIR}/test/assets/cases.mpac")
-
+    stream = File.new("#{ROOT_DIR}/test/assets/cases.mpac")
 
     unpacker = Mochilo::Unpacker.new(stream)
 
