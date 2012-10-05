@@ -42,20 +42,26 @@ static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
 	return rb_result;
 }
 
+static int rb_mochilo__strcat(const char *data, size_t len, void *str)
+{
+	rb_str_buf_cat((VALUE)str, data, (long)len);
+	return 0;
+}
+
 static VALUE rb_mochilo_pack(VALUE self, VALUE rb_obj)
 {
 	mochilo_buf buf;
-	VALUE rb_result;
+	VALUE rb_result, rb_buffer;
 	int error;
 
-	mochilo_buf_init(&buf, 1024);
+	rb_buffer = rb_str_buf_new(1024);
 
+	mochilo_buf_init(&buf, 1024, &rb_mochilo__strcat, (void *)rb_buffer);
 	mochilo_pack_one(&buf, rb_obj);
-
-	rb_result = rb_str_new(buf.ptr, buf.size);
+	mochilo_buf_flush(&buf);
 	mochilo_buf_free(&buf);
 
-	return rb_result;
+	return rb_buffer;
 }
 
 void __attribute__ ((visibility ("default"))) Init_mochilo()
