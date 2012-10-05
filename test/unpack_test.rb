@@ -18,19 +18,26 @@ class MochiloPackTest < Test::Unit::TestCase
     0.231
   ]
 
+  def bytes(a)
+    a.bytes.to_a.map { |b| "0x" + b.to_s(16) }.join(' ')
+  end
+
   def test_simple_pack
     OBJECTS.each do |obj|
       a = Mochilo.pack(obj)
-      pp a
       b = Mochilo.unpack(a)
-      #assert_equal obj, b
+      assert_equal obj, b
     end
   end
 
   def test_block_pack
-    packer = Mochilo::Packer.new { |bytes| pp bytes }
+    buffer1 = ""
+    packer = Mochilo::Packer.new { |bytes| buffer1 << bytes }
     OBJECTS.each { |obj| packer << obj }
     packer.flush
+
+    buffer2 = OBJECTS.map{ |obj| Mochilo.pack(obj) }.join
+    assert_equal buffer1, buffer2
   end
 end
 
@@ -59,9 +66,12 @@ class MochiloUnpackTest < Test::Unit::TestCase
     "\x91\x00",
   ]
 
-  def xtest_crossplatform
-    binary = IO.read("#{ROOT_DIR}/test/assets/cases.mpac")
-    puts Mochilo.unpack(binary)
+  def test_simple_unpack
+    BUFFERS.each do |buf|
+      a = Mochilo.unpack(buf)
+      b = Mochilo.pack(a)
+      assert_equal buf, b
+    end
   end
 
   def xtest_benchmark

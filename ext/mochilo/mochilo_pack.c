@@ -16,8 +16,14 @@ void mochilo_pack_fixnum(mochilo_buf *buf, VALUE rb_fixnum)
 
 	if (fixnum < -0x20L) {
 		if (fixnum < -0x8000L) {
-			mochilo_buf_putc(buf, MSGPACK_T_INT32);
-			mochilo_buf_put32be(buf, &fixnum);
+			if (sizeof(long) > 4 && fixnum < -0x80000000L) {
+				mochilo_buf_putc(buf, MSGPACK_T_INT64);
+				mochilo_buf_put64be(buf, &fixnum);
+			} else {
+				int32_t fixnum32 = (int32_t)fixnum;
+				mochilo_buf_putc(buf, MSGPACK_T_INT32);
+				mochilo_buf_put32be(buf, &fixnum32);
+			}
 		} else {
 			if (fixnum < -0x80L) {
 				int16_t fixnum16 = (int16_t)fixnum;
@@ -28,7 +34,7 @@ void mochilo_pack_fixnum(mochilo_buf *buf, VALUE rb_fixnum)
 				mochilo_buf_putc(buf, (int8_t)fixnum);
 			}
 		}
-	} else if(fixnum <= 0x7fL) {
+	} else if (fixnum <= 0x7fL) {
 		mochilo_buf_putc(buf, (uint8_t)fixnum);
 	} else {
 		if (fixnum <= 0xffffL) {
@@ -41,8 +47,14 @@ void mochilo_pack_fixnum(mochilo_buf *buf, VALUE rb_fixnum)
 				mochilo_buf_put16be(buf, &fixnum16);
 			}
 		} else {
-			mochilo_buf_putc(buf, MSGPACK_T_UINT32);
-			mochilo_buf_put32be(buf, &fixnum);
+			if (fixnum <= 0xffffffffL) {
+				uint32_t fixnum32 = (uint32_t)fixnum;
+				mochilo_buf_putc(buf, MSGPACK_T_UINT32);
+				mochilo_buf_put32be(buf, &fixnum32);
+			} else if (sizeof(long) > 4) {
+				mochilo_buf_putc(buf, MSGPACK_T_UINT64);
+				mochilo_buf_put64be(buf, &fixnum);
+			}
 		}
 	}
 }
