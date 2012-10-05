@@ -29,6 +29,12 @@ static VALUE rb_cMochiloUnpacker;
 extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
 
 
+static void rb_mochilo__buf_free(void *buf)
+{
+	mochilo_buf_free(buf);
+	xfree(buf);
+}
+
 static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
 {
 	VALUE rb_result;
@@ -87,7 +93,7 @@ static VALUE rb_mochilo_unpacker_new(int argc, VALUE *argv, VALUE self)
 		rb_raise(rb_eArgError, "expected either IO or block");
 	}
 
-	return Data_Wrap_Struct(self, NULL, &rb_mochilo__src_free, source);
+	return Data_Wrap_Struct(self, NULL, &rb_mochilo__buf_free, source);
 }
 
 static VALUE rb_mochilo_unpacker_each(VALUE self)
@@ -124,12 +130,6 @@ static int rb_mochilo__buf_yield(const char *data, size_t len, void *func)
 {
 	rb_funcall((VALUE)func, rb_intern("call"), 1, rb_str_new(data, len));
 	return 0;
-}
-
-static void rb_mochilo__buf_free(void *buf)
-{
-	mochilo_buf_free(buf);
-	xfree(buf);
 }
 
 static VALUE rb_mochilo_pack(VALUE self, VALUE rb_obj)
