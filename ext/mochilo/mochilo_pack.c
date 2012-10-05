@@ -35,17 +35,12 @@ void mochilo_pack_fixnum(mochilo_buf *buf, VALUE rb_fixnum)
 {
 	long fixnum = NUM2LONG(rb_fixnum);
 
-	if(fixnum < -0x20L) {
-		if(fixnum < -0x8000L) {
-			if(fixnum < -0x80000000L) {
-				mochilo_buf_putc(buf, MSGPACK_T_INT64);
-				pack_64(buf, &fixnum);
-			} else {
-				mochilo_buf_putc(buf, MSGPACK_T_INT32);
-				pack_32(buf, &fixnum);
-			}
+	if (fixnum < -0x20L) {
+		if (fixnum < -0x8000L) {
+			mochilo_buf_putc(buf, MSGPACK_T_INT32);
+			pack_32(buf, &fixnum);
 		} else {
-			if(fixnum < -0x80L) {
+			if (fixnum < -0x80L) {
 				mochilo_buf_putc(buf, MSGPACK_T_INT16);
 				pack_16(buf, &fixnum);
 			} else {
@@ -56,7 +51,7 @@ void mochilo_pack_fixnum(mochilo_buf *buf, VALUE rb_fixnum)
 	} else if(fixnum <= 0x7fL) {
 		mochilo_buf_putc(buf, (uint8_t)fixnum);
 	} else {
-		if(fixnum <= 0xffffL) {
+		if (fixnum <= 0xffffL) {
 			if(fixnum <= 0xffL) {
 				mochilo_buf_putc(buf, MSGPACK_T_UINT8);
 				mochilo_buf_putc(buf, (uint8_t)fixnum);
@@ -65,28 +60,21 @@ void mochilo_pack_fixnum(mochilo_buf *buf, VALUE rb_fixnum)
 				pack_16(buf, &fixnum);
 			}
 		} else {
-			if(fixnum <= 0xffffffffL) {
-				mochilo_buf_putc(buf, MSGPACK_T_UINT32);
-				pack_32(buf, &fixnum);
-			} else {
-				mochilo_buf_putc(buf, MSGPACK_T_UINT64);
-				pack_64(buf, &fixnum);
-			}
+			mochilo_buf_putc(buf, MSGPACK_T_UINT32);
+			pack_32(buf, &fixnum);
 		}
 	}
 }
 
 void mochilo_pack_bignum(mochilo_buf *buf, VALUE rb_bignum)
 {
-	if(RBIGNUM_POSITIVE_P(rb_bignum)) {
-		uint64_t bignum;
-		bignum = rb_big2ull(rb_bignum);
+	if (RBIGNUM_POSITIVE_P(rb_bignum)) {
+		uint64_t bignum = rb_big2ull(rb_bignum);
 
 		mochilo_buf_putc(buf, MSGPACK_T_UINT64);
 		pack_64(buf, &bignum);
 	} else {
-		int64_t bignum;
-		bignum = rb_big2ll(rb_bignum);
+		int64_t bignum = rb_big2ll(rb_bignum);
 
 		mochilo_buf_putc(buf, MSGPACK_T_INT64);
 		pack_64(buf, &bignum);
