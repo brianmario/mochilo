@@ -57,24 +57,21 @@ int mochilo_buf_flush(mochilo_buf *buf)
 
 int mochilo_src_refill(mochilo_src *buf, size_t need)
 {
+	int refilled;
+	
 	if (!buf->alloc)
 		return -1;
 
 	memmove(buf->ptr, buf->ptr + buf->pos, buf->avail - buf->pos);
-
+	buf->avail -= buf->pos;
 	buf->pos = 0;
-	buf->avail = 0;
 
-	if (need > buf->alloc)
-		need = buf->alloc;
+	refilled = buf->refill(buf->ptr + buf->avail, buf->alloc - buf->avail, buf->opaque);
+	if (refilled > 0)
+		buf->avail += refilled;
 
-	while (buf->avail < need) {
-		int r = buf->refill(buf->ptr + buf->avail, buf->alloc - buf->avail, buf->opaque);
-		if (r < 0)
-			return -1;
-
-		buf->avail += r;
-	}
+	if (buf->avail < need)
+		return -1;
 
 	return 0;
 }
@@ -82,12 +79,10 @@ int mochilo_src_refill(mochilo_src *buf, size_t need)
 int mochilo_src_read(mochilo_src *buf, char *out, size_t need)
 {
 	if (buf->pos + need > buf->avail) {
-		int written = buf->avail - buf->pos;
+		int written;
 
-		if (!buf->alloc)
-			return -1;
-
-		if (!written && mochilo_src_refill(buf, need) < 0)
+		/* TODO: this log is not sound */
+		if (mochilo_src_refill(buf, buf->alloc) < 0)
 			return -1;
 
 		written = buf->avail - buf->pos;

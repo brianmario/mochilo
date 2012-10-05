@@ -7,6 +7,7 @@ require 'mochilo'
 require 'msgpack'
 require 'pp'
 require 'benchmark'
+require 'stringio'
 
 class CrossPlatformTest < Test::Unit::TestCase
   CASES = [
@@ -27,7 +28,15 @@ class CrossPlatformTest < Test::Unit::TestCase
 
   def test_cross_plat
     binary = IO.read("#{ROOT_DIR}/test/assets/cases.mpac")
+
+
+    unpacker = Mochilo::Unpacker.new(stream)
+
+    unpacker.each { |obj|
+      pp obj
+    }
   end
+
 end
 
 
@@ -45,6 +54,10 @@ class MochiloPackTest < Test::Unit::TestCase
     a.bytes.to_a.map { |b| "0x" + b.to_s(16) }.join(' ')
   end
 
+  def all_objects
+    OBJECTS.map{ |obj| Mochilo.pack(obj) }.join
+  end
+
   def test_simple_pack
     OBJECTS.each do |obj|
       a = Mochilo.pack(obj)
@@ -53,14 +66,25 @@ class MochiloPackTest < Test::Unit::TestCase
     end
   end
 
-  def test_block_pack
-    buffer1 = ""
-    packer = Mochilo::Packer.new { |bytes| buffer1 << bytes }
+  def test_stream_pack
+    stream = StringIO.new
+
+    packer = Mochilo::Packer.new(stream)
     OBJECTS.each { |obj| packer << obj }
     packer.flush
 
-    buffer2 = OBJECTS.map{ |obj| Mochilo.pack(obj) }.join
-    assert_equal buffer1, buffer2
+    stream.rewind
+    assert_equal all_objects, stream.read
+  end
+
+  def test_block_pack
+    buffer = ""
+
+    packer = Mochilo::Packer.new { |bytes| buffer << bytes }
+    OBJECTS.each { |obj| packer << obj }
+    packer.flush
+
+    assert_equal all_objects, buffer
   end
 end
 
@@ -94,5 +118,9 @@ class MochiloUnpackTest < Test::Unit::TestCase
       c = Mochilo.unpack(b)
       assert_equal a, c
     end
+  end
+
+  def stream_unpack
+
   end
 end
