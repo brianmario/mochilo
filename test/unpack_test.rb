@@ -4,7 +4,6 @@ $LOAD_PATH.unshift "#{ROOT_DIR}/lib"
 
 require 'test/unit'
 require 'mochilo'
-require 'msgpack'
 require 'pp'
 require 'benchmark'
 require 'stringio'
@@ -27,13 +26,12 @@ class CrossPlatformTest < Test::Unit::TestCase
   ]
 
   def test_cross_plat
+    unpacked = []
     stream = File.new("#{ROOT_DIR}/test/assets/cases.mpac")
-
     unpacker = Mochilo::Unpacker.new(stream)
+    unpacker.each { |obj| unpacked << obj }
 
-    unpacker.each { |obj|
-      pp obj
-    }
+    assert_equal CASES, unpacked
   end
 
 end

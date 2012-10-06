@@ -7,6 +7,8 @@
 #include <stdarg.h>
 #include <stdint.h>
 
+#include <ruby.h>
+
 /**
  * Byteswap code
  */
@@ -67,6 +69,10 @@ void mochilo_buf_init(mochilo_buf *buf,
 	int (*flush)(const char *data, size_t len, void *opaque),
 	void *opaque);
 
+void mochilo_src_init_stream(mochilo_src *buf, size_t buf_size,
+	int (*refill)(char *, size_t, void *),
+	void *opaque);
+
 void mochilo_buf_free(mochilo_buf *buf);
 int mochilo_buf_put(mochilo_buf *buf, const char *data, size_t len);
 int mochilo_buf_flush(mochilo_buf *buf);
@@ -77,8 +83,11 @@ void mochilo_src_init_static(mochilo_src *buf, uint8_t *data, size_t len);
 	if (b->size + (d) > b->asize && mochilo_buf_flush(b) < 0)\
 		return;
 
+#define SRC_CHECK_AVAIL(src, bytes) \
+	(src->pos + bytes <= src->avail || mochilo_src_refill(src, bytes) == 0)
+
 #define SRC_ENSURE_AVAIL(src, bytes) \
-	if (src->pos + bytes > src->avail && mochilo_src_refill(src, bytes) < 0) \
+	if (!SRC_CHECK_AVAIL(src, bytes)) \
 		return -1;
 
 static inline void mochilo_buf_putc(mochilo_buf *buf, uint8_t c)

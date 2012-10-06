@@ -35,6 +35,12 @@ static void rb_mochilo__buf_free(void *buf)
 	xfree(buf);
 }
 
+static void rb_mochilo__src_free(void *buf)
+{
+	mochilo_src_free(buf);
+	xfree(buf);
+}
+
 static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
 {
 	VALUE rb_result;
@@ -54,22 +60,22 @@ static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
 
 static int rb_mochilo__src_readio(char *buffer, size_t need, void *io)
 {
-	size_t read_count;
-	VALUE rbr = rb_funcall((VALUE)io, rb_intern("read"), 1, INT2FIX((long)need));
+	long len;
+	VALUE str = rb_funcall((VALUE)io, rb_intern("read"), 1, INT2FIX((long)need));
 
-	if (NIL_P(rbr))
-		return -1;
+	if (NIL_P(str))
+		return 0;
 
-	read_count = (size_t)FIX2INT(rbr);
-	if (read_count < need)
-		return -1;
+	Check_Type(str, T_STRING);
 
-	return need;
+	len = RSTRING_LEN(str);
+	memcpy(buffer, RSTRING_PTR(str), len);
+	return len;
 }
 
 static VALUE rb_mochilo_unpacker_new(int argc, VALUE *argv, VALUE self)
 {
-	mochilo_buf *source;
+	mochilo_src *source;
 	long buffer_size = 1024;
 	VALUE rb_io_object, rb_buf_size, rb_block;
 
@@ -83,17 +89,19 @@ static VALUE rb_mochilo_unpacker_new(int argc, VALUE *argv, VALUE self)
 	source = xmalloc(sizeof(mochilo_src));
 
 	if (!NIL_P(rb_io_object)) {
-		mochilo_src_init_stream(source, (size_t)buffer_size, &rb_mochilo__src_readio, (void *)rb_io_object);
+		mochilo_src_init_stream(source,
+			(size_t)buffer_size,
+			&rb_mochilo__src_readio,
+			(void *)rb_io_object);
 	}
 	else if (!NIL_P(rb_block)) {
 		rb_raise(rb_eArgError, "not supported");
-		// mochilo_src_init_stream(source, (size_t)buffer_size, &rb_mochilo__src_yield, (void *)rb_block);
 	}
 	else {
 		rb_raise(rb_eArgError, "expected either IO or block");
 	}
 
-	return Data_Wrap_Struct(self, NULL, &rb_mochilo__buf_free, source);
+	return Data_Wrap_Struct(self, NULL, &rb_mochilo__src_free, source);
 }
 
 static VALUE rb_mochilo_unpacker_each(VALUE self)
@@ -110,6 +118,15 @@ static VALUE rb_mochilo_unpacker_each(VALUE self)
 	while ((error = mochilo_unpack_one((mo_value)&rb_result, source)) == 0) {
 		rb_yield(rb_result);
 	}
+
+	if (error == MSGPACK_ENOTHING)
+		return Qnil;
+
+	if (error == MSGPACK_EEOF)
+		rb_raise(rb_eEOFError, "unexpected end of stream");
+
+	if (error == MSGPACK_EINVALID)
+		rb_raise(rb_eRuntimeError, "corrupted data in stream");
 
 	return Qnil;
 }
@@ -206,5 +223,8 @@ void __attribute__ ((visibility ("default"))) Init_mochilo()
 
 	rb_cMochiloUnpacker = rb_define_class_under(rb_mMochilo, "Unpacker", rb_cObject);
 	rb_define_singleton_method(rb_cMochiloUnpacker, "new", rb_mochilo_unpacker_new, -1);
+
+	rb_define_method(rb_cMochiloUnpacker, "each", rb_mochilo_unpacker_each, 0);
+	rb_define_method(rb_cMochiloUnpacker, "unpack", rb_mochilo_unpacker_each, 0);
 }
 

@@ -15,7 +15,8 @@
 #define rb_enc_copy(dst, src)
 #endif
 
-MOAPI int mochilo__str_is_binary(VALUE rb_str) {
+MOAPI int mochilo__str_is_binary(VALUE rb_str)
+{
 #ifdef HAVE_RUBY_ENCODING_H
 	return ENCODING_IS_ASCII8BIT(rb_str);
 #else

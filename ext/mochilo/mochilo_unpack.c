@@ -62,7 +62,9 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 {
 	uint8_t leader;
 
-	SRC_ENSURE_AVAIL(src, 1);
+	if (!SRC_CHECK_AVAIL(src, 1))
+		return MSGPACK_ENOTHING;
+
 	mochilo_src_get8be(src, &leader);
 
 	switch (leader) {
@@ -161,13 +163,11 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 		case MSGPACK_T_STR16:
 		{
 			uint16_t length;
-			enum msgpack_enc_t encoding;
+			uint8_t encoding;
 
-			SRC_ENSURE_AVAIL(src, 2);
+			SRC_ENSURE_AVAIL(src, 2 + 1);
 			mochilo_src_get16be(src, &length);
-
-			SRC_ENSURE_AVAIL(src, 1);
-			mochilo_src_get8be(src, encoding);
+			mochilo_src_get8be(src, &encoding);
 
 			return moapi_str_new(_value, encoding, src, length);
 		}
@@ -175,13 +175,11 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 		case MSGPACK_T_STR32:
 		{
 			uint32_t length;
-			enum msgpack_enc_t encoding;
+			uint8_t encoding;
 
-			SRC_ENSURE_AVAIL(src, 4);
+			SRC_ENSURE_AVAIL(src, 4 + 1);
 			mochilo_src_get32be(src, &length);
-
-			SRC_ENSURE_AVAIL(src, 1);
-			mochilo_src_get8be(src, encoding);
+			mochilo_src_get8be(src, &encoding);
 
 			return moapi_str_new(_value, encoding, src, length);
 		}
@@ -228,7 +226,7 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 				return moapi_bytes_new(_value, src, length);
 			}
 
-			return -1;
+			return MSGPACK_EINVALID;
 		}
 	}
 }

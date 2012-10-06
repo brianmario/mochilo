@@ -14,7 +14,7 @@ void mochilo_buf_init(mochilo_buf *buf,
 		buffer_size = 32;
 
 	buf->asize = buffer_size;
-	buf->ptr = malloc(buffer_size);
+	buf->ptr = xmalloc(buffer_size);
 
 	buf->size = 0;
 	buf->flush = flush;
@@ -24,7 +24,7 @@ void mochilo_buf_init(mochilo_buf *buf,
 void mochilo_buf_free(mochilo_buf *buf)
 {
 	if (!buf) return;
-	free(buf->ptr);
+	xfree(buf->ptr);
 }
 
 int mochilo_buf_put(mochilo_buf *buf, const char *data, size_t len)
@@ -70,28 +70,18 @@ int mochilo_src_refill(mochilo_src *buf, size_t need)
 	if (refilled > 0)
 		buf->avail += refilled;
 
-	if (buf->avail < need)
-		return -1;
-
-	return 0;
+	return (buf->avail >= need) ? 0 : -1;
 }
 
 int mochilo_src_read(mochilo_src *buf, char *out, size_t need)
 {
-	if (buf->pos + need > buf->avail) {
-		int written;
-
-		/* TODO: this log is not sound */
-		if (mochilo_src_refill(buf, buf->alloc) < 0)
+	if (buf->pos == buf->avail) {
+		if (mochilo_src_refill(buf, 0) < 0)
 			return -1;
-
-		written = buf->avail - buf->pos;
-		memcpy(out, buf->ptr + buf->pos, written);
-
-		buf->pos = 0;
-		buf->avail = 0;
-		return written;
 	}
+
+	if (buf->pos + need > buf->avail) 
+		need = buf->avail - buf->pos;
 
 	memcpy(out, buf->ptr + buf->pos, need);
 	buf->pos += need;
@@ -106,8 +96,32 @@ void mochilo_src_init_static(mochilo_src *buf, uint8_t *data, size_t len)
 	buf->alloc = 0;
 }
 
+void mochilo_src_init_stream(mochilo_src *buf, size_t buf_size,
+	int (*refill)(char *, size_t, void *),
+	void *opaque)
+{
+	buf->alloc = buf_size;
+	buf->ptr = xmalloc(buf_size);
+	buf->avail = 0;
+	buf->pos = 0;
+
+	buf->refill = refill;
+	buf->opaque = opaque;
+}
+
 void mochilo_src_free(mochilo_src *buf)
 {
 	if (buf && buf->alloc)
-		free(buf->ptr);
+		xfree(buf->ptr);
+}
+
+void mochilo_src_status(mochilo_src *buf)
+{
+	size_t i;
+
+	printf("%db buffered stream | %d/%d\n", (int)buf->alloc, (int)buf->pos, (int)buf->avail);
+	printf("DATA: ");
+	for (i = buf->pos; i < buf->avail; ++i)
+		printf("0x%02X ", (uint8_t)buf->ptr[i]);
+	printf("\n\n");
 }

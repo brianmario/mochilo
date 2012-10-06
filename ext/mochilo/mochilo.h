@@ -56,6 +56,12 @@ enum msgpack_enc_t {
 	MSGPACK_ENC_KOI8_R
 };
 
+enum msgpack_err_t {
+	MSGPACK_EEOF = -1,
+	MSGPACK_EINVALID = -2,
+	MSGPACK_ENOTHING = -3,
+};
+
 typedef void * mo_value;
 typedef uint64_t mo_integer;
 int mochilo_unpack_one(mo_value *_value, mochilo_src *src);

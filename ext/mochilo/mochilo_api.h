@@ -17,7 +17,7 @@ MOAPI int moapi_bytes_new(mo_value *value, mochilo_src *src, size_t len)
 		if ((r = mochilo_src_read(src, heap, sizeof(heap))) < 0)
 			return -1;
 
-		rb_str_buf_cat(buffer, &heap[0], r);
+		rb_str_buf_cat(buffer, heap, r);
 		len -= r;
 	}
 
@@ -25,7 +25,7 @@ MOAPI int moapi_bytes_new(mo_value *value, mochilo_src *src, size_t len)
 		if ((r = mochilo_src_read(src, heap, len)) < 0)
 			return -1;
 
-		rb_str_buf_cat(buffer, &heap[0], r);
+		rb_str_buf_cat(buffer, heap, r);
 		len -= r;
 	}
 
@@ -33,16 +33,15 @@ MOAPI int moapi_bytes_new(mo_value *value, mochilo_src *src, size_t len)
 	return 0;
 }
 
-MOAPI int moapi_str_new(mo_value *value, enum msgpack_enc_t encoding, mochilo_src *src, size_t len)
+MOAPI int moapi_str_new(
+	mo_value *value,
+	enum msgpack_enc_t encoding,
+	mochilo_src *src, size_t len)
 {
-	int err;
-
-	err = moapi_bytes_new(value, src, len);
-	if (err < 0)
-		return err;
+	if (moapi_bytes_new(value, src, len) < 0)
+		return -1;
 
 	/* TODO: tag string with encoding */
-
 	return 0;
 }
 
