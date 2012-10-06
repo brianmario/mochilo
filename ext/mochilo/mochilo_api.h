@@ -17,7 +17,7 @@ MOAPI int moapi_bytes_new(mo_value *value, mochilo_src *src, size_t len)
 		if ((r = mochilo_src_read(src, heap, sizeof(heap))) < 0)
 			return -1;
 
-		rb_str_buf_cat(buffer, heap, r);
+		rb_str_buf_cat(buffer, &heap[0], r);
 		len -= r;
 	}
 
@@ -25,7 +25,7 @@ MOAPI int moapi_bytes_new(mo_value *value, mochilo_src *src, size_t len)
 		if ((r = mochilo_src_read(src, heap, len)) < 0)
 			return -1;
 
-		rb_str_buf_cat(buffer, heap, r);
+		rb_str_buf_cat(buffer, &heap[0], r);
 		len -= r;
 	}
 
