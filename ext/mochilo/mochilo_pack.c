@@ -5,8 +5,23 @@
 
 #include "mochilo.h"
 #include "intern.h"
+
+#define RSTRING_NOT_MODIFIED
 #include <ruby.h>
-#include <st.h>
+#include <ruby/st.h>
+#ifdef HAVE_RUBY_ENCODING_H
+#include <ruby/encoding.h>
+#else
+#define rb_enc_copy(dst, src)
+#endif
+
+MOAPI int mochilo__str_is_binary(VALUE rb_str) {
+#ifdef HAVE_RUBY_ENCODING_H
+	return ENCODING_IS_ASCII8BIT(rb_str);
+#else
+	return 1;
+#endif
+}
 
 void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
 
@@ -135,6 +150,26 @@ void mochilo_pack_bytes(mochilo_buf *buf, VALUE rb_bytes)
 	mochilo_buf_put(buf, RSTRING_PTR(rb_bytes), size);
 }
 
+void mochilo_pack_str(mochilo_buf *buf, VALUE rb_str)
+{
+	long size = RSTRING_LEN(rb_str);
+
+	if (size < 0x10000) {
+		uint16_t lead = size;
+		mochilo_buf_putc(buf, MSGPACK_T_STR16);
+		/* TODO: pack encoding byte here */
+		mochilo_buf_put16be(buf, &lead);
+	}
+
+	else {
+		mochilo_buf_putc(buf, MSGPACK_T_STR32);
+		/* TODO: pack encoding byte here */
+		mochilo_buf_put32be(buf, &size);
+	}
+
+	mochilo_buf_put(buf, RSTRING_PTR(rb_str), size);
+}
+
 void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array)
 {
 	long i, size = RARRAY_LEN(rb_array);
@@ -184,7 +219,10 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 			return;
 
 		case T_STRING:
-			mochilo_pack_bytes(buf, rb_object);
+			if (mochilo__str_is_binary(rb_object) == 1)
+				mochilo_pack_bytes(buf, rb_object);
+			else
+				mochilo_pack_str(buf, rb_object);
 			return;
 
 		case T_HASH:

@@ -33,6 +33,18 @@ MOAPI int moapi_bytes_new(mo_value *value, mochilo_src *src, size_t len)
 	return 0;
 }
 
+MOAPI int moapi_str_new(mo_value *value, enum msgpack_enc_t encoding, mochilo_src *src, size_t len)
+{
+	int err;
+
+	err = moapi_bytes_new(value, src, len);
+	if (err < 0)
+		return err;
+
+	/* TODO: tag string with encoding */
+
+	return 0;
+}
 
 MOAPI mo_value moapi_array_new(size_t array_size)
 {

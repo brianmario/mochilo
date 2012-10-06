@@ -158,6 +158,34 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			return unpack_hash(_value, (size_t)length, src);
 		}
 
+		case MSGPACK_T_STR16:
+		{
+			uint16_t length;
+			enum msgpack_enc_t encoding;
+
+			SRC_ENSURE_AVAIL(src, 2);
+			mochilo_src_get16be(src, &length);
+
+			SRC_ENSURE_AVAIL(src, 1);
+			mochilo_src_get8be(src, encoding);
+
+			return moapi_str_new(_value, encoding, src, length);
+		}
+
+		case MSGPACK_T_STR32:
+		{
+			uint32_t length;
+			enum msgpack_enc_t encoding;
+
+			SRC_ENSURE_AVAIL(src, 4);
+			mochilo_src_get32be(src, &length);
+
+			SRC_ENSURE_AVAIL(src, 1);
+			mochilo_src_get8be(src, encoding);
+
+			return moapi_str_new(_value, encoding, src, length);
+		}
+
 		case MSGPACK_T_RAW16:
 		{
 			uint16_t length;
