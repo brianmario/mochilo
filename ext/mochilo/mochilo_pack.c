@@ -158,14 +158,16 @@ void mochilo_pack_str(mochilo_buf *buf, VALUE rb_str)
 	if (size < 0x10000) {
 		uint16_t lead = size;
 		mochilo_buf_putc(buf, MSGPACK_T_STR16);
-		/* TODO: pack encoding byte here */
 		mochilo_buf_put16be(buf, &lead);
+		/* TODO: pack real encoding byte here */
+		mochilo_buf_putc(buf, MSGPACK_ENC_UTF_8);
 	}
 
 	else {
 		mochilo_buf_putc(buf, MSGPACK_T_STR32);
-		/* TODO: pack encoding byte here */
 		mochilo_buf_put32be(buf, &size);
+		/* TODO: pack real encoding byte here */
+		mochilo_buf_putc(buf, MSGPACK_ENC_UTF_8);
 	}
 
 	mochilo_buf_put(buf, RSTRING_PTR(rb_str), size);
