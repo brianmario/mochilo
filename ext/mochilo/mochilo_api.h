@@ -186,7 +186,7 @@ MOAPI mo_value moapi_int64_new(int64_t value, enum msgpack_t int_type)
 MOAPI mo_value moapi_atom_new(enum msgpack_t type)
 {
 	switch (type) {
-		case MSGPACK_T_NIL: return (mo_value)Qnil; 
+		case MSGPACK_T_NIL: return (mo_value)Qnil;
 		case MSGPACK_T_TRUE: return (mo_value)Qtrue;
 		case MSGPACK_T_FALSE: return (mo_value)Qfalse;
 		default: return NULL;
