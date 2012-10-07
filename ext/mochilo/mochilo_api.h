@@ -139,10 +139,17 @@ MOAPI int moapi_str_new(
 	enum msgpack_enc_t encoding,
 	mochilo_src *src, size_t len)
 {
+	int rb_enc_index;
+	VALUE rb_str;
+
 	if (moapi_bytes_new(value, src, len) < 0)
 		return -1;
 
-	/* TODO: tag string with encoding */
+#ifdef HAVE_RUBY_ENCODING_H
+	/* TODO: do range checking so we don't overflow a lookup */
+	rb_enc_index = rb_enc_find_index(mochilo_enc_lookup[encoding]);
+	rb_enc_set_index((VALUE)*value, rb_enc_index);
+#endif
 	return 0;
 }
 
