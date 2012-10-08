@@ -2,3 +2,8 @@
 *.so
 *.bundle
 /tmp
+/bin
+/vendor/gems
+/.bundle
+/.rbenv-version
+/vendor/cache/*.gem
