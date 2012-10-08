@@ -1,14 +1,12 @@
 # encoding: utf-8
-ROOT_DIR = File.dirname(File.dirname(__FILE__))
-$LOAD_PATH.unshift "#{ROOT_DIR}/lib"
+require File.expand_path('../setup', __FILE__)
 
-require 'test/unit'
 require 'mochilo'
-require 'pp'
-require 'benchmark'
 require 'stringio'
 
-class CrossPlatformTest < Test::Unit::TestCase
+ROOT_DIR = File.dirname(File.dirname(__FILE__))
+
+class CrossPlatformTest < MiniTest::Unit::TestCase
   CASES = [
     false, true, nil,
     0,0,0,0,0,0,0,0,0,
@@ -37,7 +35,7 @@ class CrossPlatformTest < Test::Unit::TestCase
 end
 
 
-class MochiloPackTest < Test::Unit::TestCase
+class MochiloPackTest < MiniTest::Unit::TestCase
 
   OBJECTS = [
     {"hello" => "world"},
@@ -85,7 +83,7 @@ class MochiloPackTest < Test::Unit::TestCase
   end
 end
 
-class MochiloUnpackTest < Test::Unit::TestCase
+class MochiloUnpackTest < MiniTest::Unit::TestCase
   BUFFERS = [
     "\xCC\x80",
     "\xCD\x04\xD2",
