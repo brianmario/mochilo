@@ -73,9 +73,14 @@ void mochilo_src_init_stream(mochilo_src *buf, size_t buf_size,
 	int (*refill)(char *, size_t, void *),
 	void *opaque);
 
+void mochilo_src_free(mochilo_src *buf);
 void mochilo_buf_free(mochilo_buf *buf);
+
 int mochilo_buf_put(mochilo_buf *buf, const char *data, size_t len);
 int mochilo_buf_flush(mochilo_buf *buf);
+
+int mochilo_src_read(mochilo_src *buf, char *out, size_t need);
+int mochilo_src_refill(mochilo_src *buf, size_t need);
 
 void mochilo_src_init_static(mochilo_src *buf, uint8_t *data, size_t len);
 

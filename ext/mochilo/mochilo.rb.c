@@ -21,6 +21,7 @@
 #define CSTR2SYM(s) (ID2SYM(rb_intern((s))))
 
 #include "mochilo.h"
+#include "buffer.h"
 
 static VALUE rb_mMochilo;
 static VALUE rb_cMochiloPacker;
@@ -70,7 +71,7 @@ static int rb_mochilo__src_readio(char *buffer, size_t need, void *io)
 
 	len = RSTRING_LEN(str);
 	memcpy(buffer, RSTRING_PTR(str), len);
-	return len;
+	return (int)len;
 }
 
 static VALUE rb_mochilo_unpacker_new(int argc, VALUE *argv, VALUE self)
@@ -209,7 +210,7 @@ static VALUE rb_mochilo_packer_flush(VALUE self)
 	return Qnil;
 }
 
-void __attribute__ ((visibility ("default"))) Init_mochilo()
+void Init_mochilo()
 {
 	rb_mMochilo = rb_define_module("Mochilo");
 	rb_define_module_function(rb_mMochilo, "unpack", rb_mochilo_unpack, 1);

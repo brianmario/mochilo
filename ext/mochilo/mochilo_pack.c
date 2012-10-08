@@ -4,25 +4,24 @@
 #include <string.h>
 
 #include "mochilo.h"
-#include "intern.h"
 
 #define RSTRING_NOT_MODIFIED
 #include <ruby.h>
 #include <ruby/st.h>
+
 #ifdef HAVE_RUBY_ENCODING_H
-#include <ruby/encoding.h>
-#else
-#define rb_enc_copy(dst, src)
-#endif
+#	include <ruby/encoding.h>
+#	include "encodings.h"
 
 MOAPI int mochilo__str_is_binary(VALUE rb_str)
 {
-#ifdef HAVE_RUBY_ENCODING_H
 	return ENCODING_IS_ASCII8BIT(rb_str);
-#else
-	return 1;
-#endif
 }
+
+#else
+#	define rb_enc_copy(dst, src)
+#endif
+
 
 void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
 
@@ -151,27 +150,34 @@ void mochilo_pack_bytes(mochilo_buf *buf, VALUE rb_bytes)
 	mochilo_buf_put(buf, RSTRING_PTR(rb_bytes), size);
 }
 
+#ifdef HAVE_RUBY_ENCODING_H
 void mochilo_pack_str(mochilo_buf *buf, VALUE rb_str)
 {
 	long size = RSTRING_LEN(rb_str);
+	rb_encoding *encoding;
+
+	const struct mochilo_enc_map *enc2id;
+	const char *enc_name;
 
 	if (size < 0x10000) {
 		uint16_t lead = size;
 		mochilo_buf_putc(buf, MSGPACK_T_STR16);
 		mochilo_buf_put16be(buf, &lead);
-		/* TODO: pack real encoding byte here */
-		mochilo_buf_putc(buf, MSGPACK_ENC_UTF_8);
 	}
 
 	else {
 		mochilo_buf_putc(buf, MSGPACK_T_STR32);
 		mochilo_buf_put32be(buf, &size);
-		/* TODO: pack real encoding byte here */
-		mochilo_buf_putc(buf, MSGPACK_ENC_UTF_8);
 	}
 
+	encoding = rb_enc_get(rb_str);
+	enc_name = rb_enc_name(encoding);
+	enc2id = mochilo_encoding_to_id(enc_name, (unsigned int)strlen(enc_name));
+
+	mochilo_buf_putc(buf, enc2id ? enc2id->id : 0);
 	mochilo_buf_put(buf, RSTRING_PTR(rb_str), size);
 }
+#endif
 
 void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array)
 {
@@ -222,10 +228,12 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 			return;
 
 		case T_STRING:
-			if (mochilo__str_is_binary(rb_object) == 1)
-				mochilo_pack_bytes(buf, rb_object);
-			else
+#ifdef HAVE_RUBY_ENCODING_H
+			if (!mochilo__str_is_binary(rb_object))
 				mochilo_pack_str(buf, rb_object);
+			else
+#endif
+				mochilo_pack_bytes(buf, rb_object);
 			return;
 
 		case T_HASH:

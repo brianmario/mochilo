@@ -22,3 +22,7 @@ Rake::TestTask.new('test') do |t|
 end
 task 'test' => [:compile]
 
+
+task :encodings do
+  sh "ruby genperf.rb | gperf > ./ext/mochilo/encodings.h"
+end

@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include "mochilo.h"
-#include "intern.h"
 #include "mochilo_api.h"
 
 static inline int unpack_array(mo_value *_array, size_t elements, mochilo_src *buf)

@@ -85,7 +85,7 @@ int mochilo_src_read(mochilo_src *buf, char *out, size_t need)
 
 	memcpy(out, buf->ptr + buf->pos, need);
 	buf->pos += need;
-	return need;
+	return (int)need;
 }
 
 void mochilo_src_init_static(mochilo_src *buf, uint8_t *data, size_t len)
