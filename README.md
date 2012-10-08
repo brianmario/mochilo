@@ -4,4 +4,5 @@ Mochilo is a Ruby library implementing the BananaPack protocol. BananaPack is a 
 of MessagePack. It adds four new types to the protocol: String in 16 and 32 bit lengths
 and Snappy in 16 and 32 bit lengths.
 
-Check out the [format specification](blob/master/docs/format-spec.md) document.
+Check out docs/format-spec.md for detailed information on the differences between BananaPack
+and MessagePack.
