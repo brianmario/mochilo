@@ -50,7 +50,11 @@ class MochiloPackTest < MiniTest::Unit::TestCase
   end
 
   def all_objects
-    OBJECTS.map{ |obj| Mochilo.pack(obj) }.join
+    objects = OBJECTS.map{ |obj| Mochilo.pack(obj) }.join
+    if objects.respond_to?(:encoding)
+      objects.force_encoding('binary')
+    end
+    objects
   end
 
   def test_simple_pack
@@ -69,7 +73,11 @@ class MochiloPackTest < MiniTest::Unit::TestCase
     packer.flush
 
     stream.rewind
-    assert_equal all_objects, stream.read
+    serialized = stream.read
+    if serialized.respond_to?(:encoding)
+      serialized.force_encoding('binary')
+    end
+    assert_equal all_objects, serialized
   end
 
   def test_block_pack
