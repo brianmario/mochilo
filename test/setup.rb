@@ -9,7 +9,6 @@ require 'bundler/setup'
 
 # bring in minitest
 require 'minitest/autorun'
-require 'minitest/benchmark' if ENV["BENCH"]
 
 # put lib and test dirs directly on load path
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
