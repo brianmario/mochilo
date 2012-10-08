@@ -37,7 +37,8 @@ Encoding is stored in a signed
 ## Snappy
 
 The Snappy type is sort of a superset of the Raw or String types in BananaPack, but the
-contents are compressed with [Snappy](http://code.google.com/p/snappy).
+contents are compressed with [Snappy](http://code.google.com/p/snappy). It's meant to be
+used transparently when a Raw or String type is larger than a configured size.
 
 *Needs to be discussed*
 
