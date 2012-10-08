@@ -1,2 +1,4 @@
-msgpacker
 *.dSYM
+*.so
+*.bundle
+/tmp
