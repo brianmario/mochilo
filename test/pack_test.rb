@@ -1,4 +1,4 @@
-# encoding: utf-8
+# encoding: ascii-8bit
 require File.expand_path('../setup', __FILE__)
 
 require 'mochilo'
