@@ -1,5 +1,7 @@
+#!/usr/bin/env ruby
+
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
-ASSET_PATH = File.expand_path('../assets', __FILE__)
+ASSET_PATH = File.expand_path('../../test/assets', __FILE__)
 
 require 'mochilo'
 require 'json'
