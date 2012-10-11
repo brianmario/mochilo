@@ -3,30 +3,30 @@
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 ASSET_PATH = File.expand_path('../../test/assets', __FILE__)
 
+require 'rubygems'
 require 'mochilo'
 require 'json'
 require 'benchmark'
 require 'msgpack'
 require 'pp'
 
-def benchmark(filename, repeat = 1000)
+def benchmark(filename, repeat = 10)
   stream = IO.read("#{ASSET_PATH}/#{filename}")
   stream_len = stream.size
 
   object = JSON.parse(stream)
-  bytes = MessagePack.pack(object)
+  bytes = Mochilo.pack(object)
 
   stream = nil
-  GC.start
 
   def do_bench(label, repeat, &block)
     t = Benchmark::Tms.new
 
     repeat.times do
-      GC.disable
+      #GC.disable
       t = t + Benchmark.measure(nil, &block)
-      GC.enable
-      GC.start
+      #GC.enable
+      #GC.start
     end
 
     puts "-> #{label} x#{repeat}"

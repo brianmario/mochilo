@@ -19,11 +19,7 @@ class MochiloPackTest < MiniTest::Unit::TestCase
   end
 
   def all_objects
-    objects = OBJECTS.map{ |obj| Mochilo.pack(obj) }.join
-    if objects.respond_to?(:encoding)
-      objects.force_encoding('binary')
-    end
-    objects
+    OBJECTS.map{ |obj| Mochilo.pack(obj) }.join
   end
 
   def test_simple_pack
@@ -32,31 +28,6 @@ class MochiloPackTest < MiniTest::Unit::TestCase
       b = Mochilo.unpack(a)
       assert_equal obj, b
     end
-  end
-
-  def test_stream_pack
-    stream = StringIO.new
-
-    packer = Mochilo::Packer.new(stream)
-    OBJECTS.each { |obj| packer << obj }
-    packer.flush
-
-    stream.rewind
-    serialized = stream.read
-    if serialized.respond_to?(:encoding)
-      serialized.force_encoding('binary')
-    end
-    assert_equal all_objects, serialized
-  end
-
-  def test_block_pack
-    buffer = ""
-
-    packer = Mochilo::Packer.new { |bytes| buffer << bytes }
-    OBJECTS.each { |obj| packer << obj }
-    packer.flush
-
-    assert_equal all_objects, buffer
   end
 
   def test_pack_nil
@@ -121,8 +92,10 @@ class MochiloPackTest < MiniTest::Unit::TestCase
   end
 
   def test_pack_str16
-    str = "this is a test".force_encoding('UTF-8')
-    assert_equal "\xD8\x00\x0E\x00#{str}", Mochilo.pack(str)
+    if defined?(Encoding)
+      str = "this is a test".force_encoding('UTF-8')
+      assert_equal "\xD8\x00\x0E\x00#{str}", Mochilo.pack(str)
+    end
   end
 
   def xtest_pack_str32

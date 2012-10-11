@@ -24,23 +24,8 @@
 #include "buffer.h"
 
 static VALUE rb_mMochilo;
-static VALUE rb_cMochiloPacker;
-static VALUE rb_cMochiloUnpacker;
 
 extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
-
-
-static void rb_mochilo__buf_free(void *buf)
-{
-	mochilo_buf_free(buf);
-	xfree(buf);
-}
-
-static void rb_mochilo__src_free(void *buf)
-{
-	mochilo_src_free(buf);
-	xfree(buf);
-}
 
 static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
 {
@@ -50,7 +35,8 @@ static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
 
 	Check_Type(rb_buffer, T_STRING);
 
-	mochilo_src_init_static(&source, RSTRING_PTR(rb_buffer), RSTRING_LEN(rb_buffer));
+	source.ptr = RSTRING_PTR(rb_buffer);
+	source.end = source.ptr + RSTRING_LEN(rb_buffer);
 
 	error = mochilo_unpack_one((mo_value)&rb_result, &source);
 	if (error < 0)
@@ -59,155 +45,13 @@ static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
 	return rb_result;
 }
 
-static int rb_mochilo__src_readio(char *buffer, size_t need, void *io)
-{
-	long len;
-	VALUE str = rb_funcall((VALUE)io, rb_intern("read"), 1, INT2FIX((long)need));
-
-	if (NIL_P(str))
-		return 0;
-
-	Check_Type(str, T_STRING);
-
-	len = RSTRING_LEN(str);
-	memcpy(buffer, RSTRING_PTR(str), len);
-	return (int)len;
-}
-
-static VALUE rb_mochilo_unpacker_new(int argc, VALUE *argv, VALUE self)
-{
-	mochilo_src *source;
-	long buffer_size = 1024;
-	VALUE rb_io_object, rb_buf_size, rb_block;
-
-	rb_scan_args(argc, argv, "02&", &rb_io_object, &rb_buf_size, &rb_block);
-
-	if (!NIL_P(rb_buf_size)) {
-		Check_Type(rb_buf_size, T_FIXNUM);
-		buffer_size = FIX2INT(rb_buf_size);
-	}
-
-	source = xmalloc(sizeof(mochilo_src));
-
-	if (!NIL_P(rb_io_object)) {
-		mochilo_src_init_stream(source,
-			(size_t)buffer_size,
-			&rb_mochilo__src_readio,
-			(void *)rb_io_object);
-	}
-	else if (!NIL_P(rb_block)) {
-		rb_raise(rb_eArgError, "not supported");
-	}
-	else {
-		rb_raise(rb_eArgError, "expected either IO or block");
-	}
-
-	return Data_Wrap_Struct(self, NULL, &rb_mochilo__src_free, source);
-}
-
-static VALUE rb_mochilo_unpacker_each(VALUE self)
-{
-	mochilo_src *source;
-	int error = -1;
-	VALUE rb_result;
-
-	if (!rb_block_given_p())
-		return rb_funcall(self, rb_intern("to_enum"), 1, CSTR2SYM("each"));
-
-	Data_Get_Struct(self, mochilo_src, source);
-
-	while ((error = mochilo_unpack_one((mo_value)&rb_result, source)) == 0) {
-		rb_yield(rb_result);
-	}
-
-	if (error == MSGPACK_ENOTHING)
-		return Qnil;
-
-	if (error == MSGPACK_EEOF)
-		rb_raise(rb_eEOFError, "unexpected end of stream");
-
-	if (error == MSGPACK_EINVALID)
-		rb_raise(rb_eRuntimeError, "corrupted data in stream");
-
-	return Qnil;
-}
-
-
-static int rb_mochilo__buf_catstr(const char *data, size_t len, void *str)
-{
-	rb_str_buf_cat((VALUE)str, data, (long)len);
-	return 0;
-}
-
-static int rb_mochilo__buf_catio(const char *data, size_t len, void *io)
-{
-	rb_io_write((VALUE)io, rb_str_new(data, len));
-	return 0;
-}
-
-static int rb_mochilo__buf_yield(const char *data, size_t len, void *func)
-{
-	rb_funcall((VALUE)func, rb_intern("call"), 1, rb_str_new(data, len));
-	return 0;
-}
-
 static VALUE rb_mochilo_pack(VALUE self, VALUE rb_obj)
 {
 	mochilo_buf buf;
-	VALUE rb_buffer;
 
-	rb_buffer = rb_str_buf_new(1024);
-
-	mochilo_buf_init(&buf, 1024, &rb_mochilo__buf_catstr, (void *)rb_buffer);
+	mochilo_buf_init(&buf);
 	mochilo_pack_one(&buf, rb_obj);
-	mochilo_buf_flush(&buf);
-	mochilo_buf_free(&buf);
-
-	return rb_buffer;
-}
-
-static VALUE rb_mochilo_packer_new(int argc, VALUE *argv, VALUE self)
-{
-	mochilo_buf *buf;
-	long buffer_size = 1024;
-	VALUE rb_io_object, rb_buf_size, rb_block;
-
-	rb_scan_args(argc, argv, "02&", &rb_io_object, &rb_buf_size, &rb_block);
-
-	if (!NIL_P(rb_buf_size)) {
-		Check_Type(rb_buf_size, T_FIXNUM);
-		buffer_size = FIX2INT(rb_buf_size);
-	}
-
-	buf = xmalloc(sizeof(mochilo_buf));
-
-	if (!NIL_P(rb_io_object)) {
-		mochilo_buf_init(buf, (size_t)buffer_size, &rb_mochilo__buf_catio, (void *)rb_io_object);
-	}
-	else if (!NIL_P(rb_block)) {
-		mochilo_buf_init(buf, (size_t)buffer_size, &rb_mochilo__buf_yield, (void *)rb_block);
-	}
-	else {
-		rb_raise(rb_eArgError, "expected either IO or block");
-	}
-
-	return Data_Wrap_Struct(self, NULL, &rb_mochilo__buf_free, buf);
-}
-
-static VALUE rb_mochilo_packer_write(VALUE self, VALUE rb_object)
-{
-	mochilo_buf *buf;
-	Data_Get_Struct(self, mochilo_buf, buf);
-	mochilo_pack_one(buf, rb_object);
-	return self;
-}
-
-static VALUE rb_mochilo_packer_flush(VALUE self)
-{
-	mochilo_buf *buf;
-	Data_Get_Struct(self, mochilo_buf, buf);
-	mochilo_buf_flush(buf);
-	return Qnil;
+	return mochilo_buf_flush(&buf);
 }
 
 void Init_mochilo()
@@ -215,17 +59,5 @@ void Init_mochilo()
 	rb_mMochilo = rb_define_module("Mochilo");
 	rb_define_module_function(rb_mMochilo, "unpack", rb_mochilo_unpack, 1);
 	rb_define_module_function(rb_mMochilo, "pack", rb_mochilo_pack, 1);
-
-	rb_cMochiloPacker = rb_define_class_under(rb_mMochilo, "Packer", rb_cObject);
-	rb_define_singleton_method(rb_cMochiloPacker, "new", rb_mochilo_packer_new, -1);
-
-	rb_define_method(rb_cMochiloPacker, "<<", rb_mochilo_packer_write, 1);
-	rb_define_method(rb_cMochiloPacker, "flush", rb_mochilo_packer_flush, 0);
-
-	rb_cMochiloUnpacker = rb_define_class_under(rb_mMochilo, "Unpacker", rb_cObject);
-	rb_define_singleton_method(rb_cMochiloUnpacker, "new", rb_mochilo_unpacker_new, -1);
-
-	rb_define_method(rb_cMochiloUnpacker, "each", rb_mochilo_unpacker_each, 0);
-	rb_define_method(rb_cMochiloUnpacker, "unpack", rb_mochilo_unpacker_each, 0);
 }
 

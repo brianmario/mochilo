@@ -159,6 +159,7 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			return unpack_hash(_value, (size_t)length, src);
 		}
 
+#ifdef HAVE_RUBY_ENCODING_H
 		case MSGPACK_T_STR16:
 		{
 			uint16_t length;
@@ -182,25 +183,36 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 
 			return moapi_str_new(_value, encoding, src, length);
 		}
+#endif
 
 		case MSGPACK_T_RAW16:
 		{
 			uint16_t length;
+			const char *ptr;
 
 			SRC_ENSURE_AVAIL(src, 2);
 			mochilo_src_get16be(src, &length);
 
-			return moapi_bytes_new(_value, src, length);
+			if (!(ptr = mochilo_src_peek(src, length)))
+				return -1;
+
+			*_value = moapi_bytes_new(ptr, length);
+			return 0;
 		}
 
 		case MSGPACK_T_RAW32:
 		{
 			uint32_t length;
+			const char *ptr;
 
 			SRC_ENSURE_AVAIL(src, 4);
 			mochilo_src_get32be(src, &length);
 
-			return moapi_bytes_new(_value, src, length);
+			if (!(ptr = mochilo_src_peek(src, length)))
+				return -1;
+
+			*_value = moapi_bytes_new(ptr, length);
+			return 0;
 		}
 
 		default:
@@ -222,7 +234,13 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 
 			else if (leader < 0xc0) {
 				uint8_t length = leader & (~0xa0);
-				return moapi_bytes_new(_value, src, length);
+				const char *ptr;
+
+				if (!(ptr = mochilo_src_peek(src, length)))
+					return -1;
+
+				*_value = moapi_bytes_new(ptr, length);
+				return 0;
 			}
 
 			return MSGPACK_EINVALID;

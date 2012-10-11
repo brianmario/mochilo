@@ -5,123 +5,124 @@
 #include <ctype.h>
 #include "buffer.h"
 
-void mochilo_buf_init(mochilo_buf *buf,
-	size_t buffer_size,
-	int (*flush)(const char *data, size_t len, void *opaque),
-	void *opaque)
+#define MOCHILO_CHUNK_SIZE 1024
+#define MOCHILO_CHUNK_INIT 8
+
+static mochilo_buf_chunk *init_cur_chunk(mochilo_buf *buf, size_t chunk_size)
 {
-	if (buffer_size < 32)
-		buffer_size = 32;
+	mochilo_buf_chunk *chunk = &buf->chunks[buf->cur_chunk];
 
-	buf->asize = buffer_size;
-	buf->ptr = xmalloc(buffer_size);
+	if (chunk_size <= MOCHILO_CHUNK_SIZE)
+		chunk_size = MOCHILO_CHUNK_SIZE;
+	else
+		chunk_size += MOCHILO_CHUNK_SIZE;
 
-	buf->size = 0;
-	buf->flush = flush;
-	buf->opaque = opaque;
+	buf->last_alloc = chunk->ptr = malloc(chunk_size);
+	if (!chunk->ptr)
+		return NULL;
+
+	chunk->end = chunk->ptr + chunk_size;
+	return chunk;
 }
 
-void mochilo_buf_free(mochilo_buf *buf)
+static void skip_last_chunk(mochilo_buf *buf)
 {
-	if (!buf) return;
-	xfree(buf->ptr);
+	mochilo_buf_chunk *chunk = &buf->chunks[buf->cur_chunk];
+
+	buf->total_size = (chunk->ptr - buf->last_alloc);
+
+	chunk->end = chunk->ptr;
+	chunk->ptr = buf->last_alloc;
 }
 
-int mochilo_buf_put(mochilo_buf *buf, const char *data, size_t len)
+static void free_buf(mochilo_buf *buf)
 {
-	if (buf->size + len > buf->asize) {
-		if (mochilo_buf_flush(buf) < 0)
-			return -1;
+	uint16_t i;
 
-		while (len >= buf->asize) {
-			if (buf->flush(data, len, buf->opaque) < 0)
-				return -1;
+	for (i = 0; i < buf->cur_chunk; ++i)
+		free(buf->chunks[i].ptr);
 
-			len -= buf->asize;
-		}
+	free(buf->chunks);
+}
+
+
+void mochilo_buf_init(mochilo_buf *buf)
+{
+	buf->chunks = malloc(MOCHILO_CHUNK_INIT * sizeof(mochilo_buf_chunk));
+	buf->total_size = 0;
+	buf->cur_chunk = 0;
+	buf->chunk_count = MOCHILO_CHUNK_INIT;
+
+	init_cur_chunk(buf, MOCHILO_CHUNK_SIZE);
+}
+
+VALUE mochilo_buf_flush(mochilo_buf *buf)
+{
+	VALUE rb_str;
+	char *ptr;
+	uint16_t i;
+
+	skip_last_chunk(buf);
+
+	rb_str = rb_str_new(NULL, buf->total_size);
+	ptr = RSTRING(rb_str)->ptr;
+
+	for (i = 0; i <= buf->cur_chunk; ++i) {
+		mochilo_buf_chunk *chunk = &buf->chunks[i];
+		size_t chunk_len = chunk->end - chunk->ptr;
+
+		memcpy(ptr, chunk->ptr, chunk_len);
+		ptr += chunk_len;
+		free(chunk->ptr);
 	}
 
-	memmove(buf->ptr + buf->size, data, len);
-	buf->size += len;
-	return 0;
+	free(buf->chunks);
+	return rb_str;
 }
 
-int mochilo_buf_flush(mochilo_buf *buf)
+mochilo_buf_chunk *mochilo_buf_rechunk2(mochilo_buf *buf, size_t chunk_size)
 {
-	if (buf->size && buf->flush(buf->ptr, buf->size, buf->opaque) < 0)
-		return -1;
+	skip_last_chunk(buf);
 
-	buf->size = 0;
-	return 0;
-}
+	if (++buf->cur_chunk == buf->chunk_count) {
+		buf->chunk_count *= 2;
 
-int mochilo_src_refill(mochilo_src *buf, size_t need)
-{
-	int refilled;
-	
-	if (!buf->alloc)
-		return -1;
+		buf->chunks = realloc(buf->chunks, buf->chunk_count * sizeof(mochilo_buf_chunk));
+		if (!buf->chunks)
+			return NULL;
 
-	memmove(buf->ptr, buf->ptr + buf->pos, buf->avail - buf->pos);
-	buf->avail -= buf->pos;
-	buf->pos = 0;
-
-	refilled = buf->refill(buf->ptr + buf->avail, buf->alloc - buf->avail, buf->opaque);
-	if (refilled > 0)
-		buf->avail += refilled;
-
-	return (buf->avail >= need) ? 0 : -1;
-}
-
-int mochilo_src_read(mochilo_src *buf, char *out, size_t need)
-{
-	if (buf->pos == buf->avail) {
-		if (mochilo_src_refill(buf, 0) < 0)
-			return -1;
 	}
 
-	if (buf->pos + need > buf->avail) 
-		need = buf->avail - buf->pos;
-
-	memcpy(out, buf->ptr + buf->pos, need);
-	buf->pos += need;
-	return (int)need;
+	return init_cur_chunk(buf, chunk_size);
 }
 
-void mochilo_src_init_static(mochilo_src *buf, uint8_t *data, size_t len)
+mochilo_buf_chunk *mochilo_buf_rechunk(mochilo_buf *buf)
 {
-	buf->ptr = data;
-	buf->pos = 0;
-	buf->avail = len;
-	buf->alloc = 0;
+	return mochilo_buf_rechunk2(buf, MOCHILO_CHUNK_SIZE);
 }
 
-void mochilo_src_init_stream(mochilo_src *buf, size_t buf_size,
-	int (*refill)(char *, size_t, void *),
-	void *opaque)
+void mochilo_buf_put(mochilo_buf *buf, const char *data, size_t len)
 {
-	buf->alloc = buf_size;
-	buf->ptr = xmalloc(buf_size);
-	buf->avail = 0;
-	buf->pos = 0;
+	mochilo_buf_chunk *chunk = &buf->chunks[buf->cur_chunk];
 
-	buf->refill = refill;
-	buf->opaque = opaque;
+	if (unlikely(chunk->ptr + len > chunk->end)) {
+		if (!(chunk = mochilo_buf_rechunk2(buf, len)))
+			return;
+	}
+
+	memmove(chunk->ptr, data, len);
+	chunk->ptr += len;
 }
 
-void mochilo_src_free(mochilo_src *buf)
+const char *mochilo_src_peek(mochilo_src *buf, size_t need)
 {
-	if (buf && buf->alloc)
-		xfree(buf->ptr);
+	const char *ptr;
+
+	if (unlikely(buf->ptr + need > buf->end))
+		return NULL;
+
+	ptr = buf->ptr;
+	buf->ptr += need;
+	return ptr;
 }
 
-void mochilo_src_status(mochilo_src *buf)
-{
-	size_t i;
-
-	printf("%db buffered stream | %d/%d\n", (int)buf->alloc, (int)buf->pos, (int)buf->avail);
-	printf("DATA: ");
-	for (i = buf->pos; i < buf->avail; ++i)
-		printf("0x%02X ", (uint8_t)buf->ptr[i]);
-	printf("\n\n");
-}

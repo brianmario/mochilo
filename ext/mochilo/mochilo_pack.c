@@ -15,7 +15,7 @@
 
 MOAPI int mochilo__str_is_binary(VALUE rb_str)
 {
-	return ENCODING_IS_ASCII8BIT(rb_str);
+	return 0; //ENCODING_IS_ASCII8BIT(rb_str);
 }
 
 #else

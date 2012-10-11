@@ -23,11 +23,5 @@ class CrossPlatformTest < MiniTest::Unit::TestCase
   ]
 
   def test_cross_plat
-    unpacked = []
-    stream = File.new("#{ROOT_DIR}/test/assets/cases.mpac")
-    unpacker = Mochilo::Unpacker.new(stream)
-    unpacker.each { |obj| unpacked << obj }
-
-    assert_equal CASES, unpacked
   end
 end

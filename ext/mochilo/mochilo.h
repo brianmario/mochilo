@@ -5,7 +5,6 @@
 #include "buffer.h"
 
 #define MOAPI static inline
-#define unlikely(x)     __builtin_expect((x),0)
 
 enum msgpack_t {
 	MSGPACK_T_NIL = 0xc0,
