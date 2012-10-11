@@ -86,7 +86,7 @@ VALUE mochilo_buf_flush(mochilo_buf *buf)
 
 	free(buf->chunks);
 
-#ifdef RUBINIUS2
+#ifdef RUBINIUS
 	rb_str = rb_str_new(alloc, buf->total_size);
 #endif
 

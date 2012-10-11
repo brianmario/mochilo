@@ -10,6 +10,8 @@ require 'benchmark'
 require 'msgpack'
 require 'pp'
 
+GC.disable
+
 def benchmark(filename, repeat = 10)
   stream = IO.read("#{ASSET_PATH}/#{filename}")
   stream_len = stream.size
