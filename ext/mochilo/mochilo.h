@@ -1,7 +1,10 @@
 #ifndef __MOCHILO_H__
 #define __MOCHILO_H__
 
+#include <ruby.h>
+#include <ruby/st.h>
 #include <ctype.h>
+
 #include "buffer.h"
 
 #define MOAPI static inline
@@ -141,5 +144,10 @@ enum msgpack_err_t {
 typedef void * mo_value;
 typedef uint64_t mo_integer;
 int mochilo_unpack_one(mo_value *_value, mochilo_src *src);
+
+#ifdef HAVE_RUBY_ENCODING_H
+#	include <ruby/encoding.h>
+#	include "encodings.h"
+#endif
 
 #endif

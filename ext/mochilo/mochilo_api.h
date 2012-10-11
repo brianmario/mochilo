@@ -1,9 +1,3 @@
-#define RSTRING_NOT_MODIFIED
-#include <ruby.h>
-
-#ifdef HAVE_RUBY_ENCODING_H
-#include <ruby/encoding.h>
-#endif
 
 MOAPI mo_value moapi_bytes_new(const char *src, size_t len)
 {
@@ -13,14 +7,13 @@ MOAPI mo_value moapi_bytes_new(const char *src, size_t len)
 #ifdef HAVE_RUBY_ENCODING_H
 MOAPI mo_value moapi_str_new(const char *src, size_t len, enum msgpack_enc_t encoding)
 {
-	int index;
+	int index = 0;
 	VALUE str;
 
-	if (encoding >= sizeof(mochilo_enc_lookup)/sizeof(mochilo_enc_lookup[0]))
-		return -2;
+	if (encoding < sizeof(mochilo_enc_lookup)/sizeof(mochilo_enc_lookup[0]))
+		index = rb_enc_find_index(mochilo_enc_lookup[encoding]);
 
 	str = rb_str_new(src, len);
-	index = rb_enc_find_index(mochilo_enc_lookup[encoding]);
 	rb_enc_set_index(str, index);
 
 	return (mo_value)str;

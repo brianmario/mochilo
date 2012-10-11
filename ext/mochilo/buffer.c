@@ -3,7 +3,7 @@
  */
 #include <stdarg.h>
 #include <ctype.h>
-#include "buffer.h"
+#include "mochilo.h"
 
 #define MOCHILO_CHUNK_SIZE 1024
 #define MOCHILO_CHUNK_INIT 8
@@ -29,7 +29,8 @@ static void skip_last_chunk(mochilo_buf *buf)
 {
 	mochilo_buf_chunk *chunk = &buf->chunks[buf->cur_chunk];
 
-	buf->total_size = (chunk->ptr - buf->last_alloc);
+	buf->total_size += (chunk->ptr - buf->last_alloc);
+	buf->cur_chunk++;
 
 	chunk->end = chunk->ptr;
 	chunk->ptr = buf->last_alloc;
@@ -65,9 +66,9 @@ VALUE mochilo_buf_flush(mochilo_buf *buf)
 	skip_last_chunk(buf);
 
 	rb_str = rb_str_new(NULL, buf->total_size);
-	ptr = RSTRING(rb_str)->ptr;
+	ptr = RSTRING_PTR(rb_str);
 
-	for (i = 0; i <= buf->cur_chunk; ++i) {
+	for (i = 0; i < buf->cur_chunk; ++i) {
 		mochilo_buf_chunk *chunk = &buf->chunks[i];
 		size_t chunk_len = chunk->end - chunk->ptr;
 
@@ -84,7 +85,7 @@ mochilo_buf_chunk *mochilo_buf_rechunk2(mochilo_buf *buf, size_t chunk_size)
 {
 	skip_last_chunk(buf);
 
-	if (++buf->cur_chunk == buf->chunk_count) {
+	if (buf->cur_chunk == buf->chunk_count) {
 		buf->chunk_count *= 2;
 
 		buf->chunks = realloc(buf->chunks, buf->chunk_count * sizeof(mochilo_buf_chunk));

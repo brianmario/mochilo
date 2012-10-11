@@ -5,24 +5,6 @@
 
 #include "mochilo.h"
 
-#define RSTRING_NOT_MODIFIED
-#include <ruby.h>
-#include <ruby/st.h>
-
-#ifdef HAVE_RUBY_ENCODING_H
-#	include <ruby/encoding.h>
-#	include "encodings.h"
-
-MOAPI int mochilo__str_is_binary(VALUE rb_str)
-{
-	return 0; //ENCODING_IS_ASCII8BIT(rb_str);
-}
-
-#else
-#	define rb_enc_copy(dst, src)
-#endif
-
-
 void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
 
 void mochilo_pack_fixnum(mochilo_buf *buf, VALUE rb_fixnum)
@@ -229,7 +211,7 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 
 		case T_STRING:
 #ifdef HAVE_RUBY_ENCODING_H
-			if (!mochilo__str_is_binary(rb_object))
+			if (ENCODING_GET(rb_object) != 0)
 				mochilo_pack_str(buf, rb_object);
 			else
 #endif

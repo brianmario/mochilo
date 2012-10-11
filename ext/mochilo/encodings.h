@@ -202,7 +202,7 @@ __inline
 __attribute__ ((__gnu_inline__))
 #endif
 #endif
-const struct mochilo_enc_map *
+static const struct mochilo_enc_map *
 mochilo_encoding_to_id (str, len)
      register const char *str;
      register unsigned int len;

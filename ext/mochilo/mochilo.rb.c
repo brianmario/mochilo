@@ -13,15 +13,10 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#define RSTRING_NOT_MODIFIED
-
 #include <stdio.h>
-#include "ruby.h"
+#include "mochilo.h"
 
 #define CSTR2SYM(s) (ID2SYM(rb_intern((s))))
-
-#include "mochilo.h"
-#include "buffer.h"
 
 static VALUE rb_mMochilo;
 

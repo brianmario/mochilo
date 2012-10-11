@@ -7,8 +7,6 @@
 #include <stdarg.h>
 #include <stdint.h>
 
-#include <ruby.h>
-
 #define unlikely(x)     __builtin_expect((x),0)
 
 /**
