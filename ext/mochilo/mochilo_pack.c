@@ -182,7 +182,7 @@ void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array)
 	}
 
 	for (i = 0; i < size; i++) {
-		mochilo_pack_one(buf, RARRAY_PTR(rb_array)[i]);
+		mochilo_pack_one(buf, rb_ary_entry(rb_array, i));
 	}
 }
 
