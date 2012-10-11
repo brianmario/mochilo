@@ -1,6 +1,7 @@
 #ifndef __MOCHILO_H__
 #define __MOCHILO_H__
 
+#define RSTRING_NOT_MODIFIED
 #include <ruby.h>
 #include <ruby/st.h>
 #include <ctype.h>

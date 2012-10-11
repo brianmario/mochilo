@@ -65,8 +65,15 @@ VALUE mochilo_buf_flush(mochilo_buf *buf)
 
 	skip_last_chunk(buf);
 
+#ifdef RUBINIUS
+	char *alloc;
+	alloc = ptr = malloc(buf->total_size);
+	if (alloc == NULL)
+		rb_raise(rb_eNoMemError, "Failed to alloc temp buffer");
+#else
 	rb_str = rb_str_new(NULL, buf->total_size);
 	ptr = RSTRING_PTR(rb_str);
+#endif
 
 	for (i = 0; i < buf->cur_chunk; ++i) {
 		mochilo_buf_chunk *chunk = &buf->chunks[i];
@@ -78,6 +85,11 @@ VALUE mochilo_buf_flush(mochilo_buf *buf)
 	}
 
 	free(buf->chunks);
+
+#ifdef RUBINIUS2
+	rb_str = rb_str_new(alloc, buf->total_size);
+#endif
+
 	return rb_str;
 }
 
