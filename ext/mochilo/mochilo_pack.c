@@ -188,6 +188,49 @@ void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array)
 
 void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 {
+#ifndef RUBINIUS
+	if (rb_object == Qnil) {
+		mochilo_buf_putc(buf, MSGPACK_T_NIL);
+	}
+	else if (rb_object == Qtrue) {
+		mochilo_buf_putc(buf, MSGPACK_T_TRUE);
+	}
+	else if (rb_object == Qfalse) {
+		mochilo_buf_putc(buf, MSGPACK_T_FALSE);
+	}
+	else if (FIXNUM_P(rb_object)) {
+		mochilo_pack_fixnum(buf, rb_object);
+	}
+
+	else {
+		switch (BUILTIN_TYPE(rb_object)) {
+		case T_STRING:
+#ifdef HAVE_RUBY_ENCODING_H
+			if (ENCODING_GET(rb_object) != 0)
+				mochilo_pack_str(buf, rb_object);
+			else
+#endif
+				mochilo_pack_bytes(buf, rb_object);
+			return;
+
+		case T_HASH:
+			mochilo_pack_hash(buf, rb_object);
+			return;
+
+		case T_ARRAY:
+			mochilo_pack_array(buf, rb_object);
+			return;
+
+		case T_FLOAT:
+			mochilo_pack_double(buf, rb_object);
+			return;
+
+		case T_BIGNUM:
+			mochilo_pack_bignum(buf, rb_object);
+			return;
+		}
+	}
+#else // RUBINIUS
 	switch (rb_type(rb_object)) {
 		case T_NIL:
 			mochilo_buf_putc(buf, MSGPACK_T_NIL);
@@ -229,9 +272,7 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 		case T_FLOAT:
 			mochilo_pack_double(buf, rb_object);
 			return;
-
-		default:
-			return;
 	}
+#endif
 }
 
