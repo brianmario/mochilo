@@ -15,7 +15,7 @@ def benchmark(filename, repeat = 1000)
   stream_len = stream.size
 
   object = JSON.parse(stream)
-  bytes = Mochilo.pack(object)
+  bytes = object.to_msgpack
 
   stream = nil
 
