@@ -34,8 +34,4 @@ class MochiloUnpackTest < MiniTest::Unit::TestCase
       assert_equal a, c
     end
   end
-
-  def stream_unpack
-
-  end
 end
