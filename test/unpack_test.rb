@@ -34,4 +34,118 @@ class MochiloUnpackTest < MiniTest::Unit::TestCase
       assert_equal a, c
     end
   end
+
+  def test_unpack_nil
+    assert_equal nil, Mochilo.unpack("\xC0")
+  end
+
+  def test_unpack_true
+    assert_equal true, Mochilo.unpack("\xC3")
+  end
+
+  def test_unpack_false
+    assert_equal false, Mochilo.unpack("\xC2")
+  end
+
+  def xtest_unpack_float
+    # ruby uses double's internally so we can't reliably
+    # test for a float without some hacks
+  end
+
+  def test_unpack_double
+    assert_equal 123.45, Mochilo.unpack("\xCB@^\xDC\xCC\xCC\xCC\xCC\xCD")
+  end
+
+  def test_unpack_positive_fixed
+    assert_equal 21, Mochilo.unpack("\x15")
+  end
+
+  def test_unpack_negative_fixed
+    assert_equal -21, Mochilo.unpack("\xEB")
+  end
+
+  def test_unpack_uint8
+    assert_equal 214, Mochilo.unpack("\xCC\xD6")
+  end
+
+  def test_unpack_uint16
+    assert_equal 21474, Mochilo.unpack("\xCDS\xE2")
+  end
+
+  def test_unpack_uint32
+    assert_equal 2147483647, Mochilo.unpack("\xCE\x7F\xFF\xFF\xFF")
+  end
+
+  def test_unpack_uint64
+    assert_equal 21474836479, Mochilo.unpack("\xCF\x00\x00\x00\x04\xFF\xFF\xFF\xFF")
+  end
+
+  def test_unpack_int8
+    assert_equal -34, Mochilo.unpack("\xD0\xDE")
+  end
+
+  def test_unpack_int16
+    assert_equal -21474, Mochilo.unpack("\xD1\xAC\x1E")
+  end
+
+  def test_unpack_int32
+    assert_equal -2147483647, Mochilo.unpack("\xD2\x80\x00\x00\x01")
+  end
+
+  def test_unpack_int64
+    assert_equal -21474836479, Mochilo.unpack("\xD3\xFF\xFF\xFF\xFB\x00\x00\x00\x01")
+  end
+
+  if defined?(Encoding)
+    def test_unpack_str16
+      str = "this is a test".force_encoding('UTF-8')
+      assert_equal str, Mochilo.unpack("\xD8\x00\x0E\x00#{str}")
+    end
+  end
+
+  def xtest_unpack_str32
+    # TODO: not sure how to test this without making a massive 66k string
+  end
+
+  def test_unpack_fixed_raw
+    str = "this is a test"
+    assert_equal str, Mochilo.unpack("\xAE#{str}")
+  end
+
+  def test_unpack_raw16
+    str = ("a"*255)
+    assert_equal str, Mochilo.unpack("\xDA\x00\xFF#{str}")
+  end
+
+  def xtest_unpack_raw32
+    # TODO: not sure how to test this without making a massive 66k string
+  end
+
+  def test_unpack_fixed_array
+    assert_equal [], Mochilo.unpack("\x90")
+    assert_equal [1], Mochilo.unpack("\x91\x01")
+  end
+
+  def test_unpack_array16
+    bytes = ("a"*34).bytes.to_a
+    assert_equal bytes, Mochilo.unpack("\xDC\x00\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+  end
+
+  def xtest_unpack_array32
+    # TODO: not sure how to test this without making a massive 66k item array
+  end
+
+  def test_unpack_fixed_map
+    assert_equal({}, Mochilo.unpack("\x80"))
+    assert_equal({1 => 2}, Mochilo.unpack("\x81\x01\x02"))
+  end
+
+  def test_unpack_map16
+    bytes = ("a"*34).bytes.to_a
+    assert_equal bytes, Mochilo.unpack("\xDC\x00\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+  end
+
+  def test_unpack_map32
+    # TODO: not sure how to test this without making a massive 66k item hash
+  end
 end
