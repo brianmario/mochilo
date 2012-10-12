@@ -105,7 +105,11 @@ class MochiloPackTest < MiniTest::Unit::TestCase
   if defined?(Encoding)
     def test_pack_symbol_as_string
       str = "symbol".force_encoding('UTF-8')
-      assert_equal "\xD8\x00\x06\x00symbol", Mochilo.pack(str.to_sym)
+
+      # NOTE: calling to_sym here ends up creating a symbol tagged with the
+      # US-ASCII encoding so we're checking for that (\x01) instead of
+      # UTF-8 (which is \x00)
+      assert_equal "\xD8\x00\x06\x01symbol", Mochilo.pack(str.to_sym)
 
     end
   else
