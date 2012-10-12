@@ -8,7 +8,12 @@ task :default => :compile
 # ==========================================================
 # Ruby Extension
 # ==========================================================
-Rake::ExtensionTask.new('mochilo')
+Rake::ExtensionTask.new('mochilo') do |ext|
+  ext.cross_compile = true
+  ext.cross_platform = ['x86-mingw32', 'x86-mswin32-60']
+
+  ext.lib_dir = File.join 'lib', 'mochilo'
+end
 
 desc "Open an irb session preloaded with Mochilo"
 task :console do
