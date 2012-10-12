@@ -66,7 +66,7 @@ static VALUE rb_mochilo_pack(VALUE self, VALUE rb_obj)
 void Init_mochilo()
 {
 	rb_mMochilo = rb_define_module("Mochilo");
-	rb_define_module_function(rb_mMochilo, "unpack", rb_mochilo_unpack, 1);
-	rb_define_module_function(rb_mMochilo, "pack", rb_mochilo_pack, 1);
+	rb_define_method(rb_mMochilo, "unpack", rb_mochilo_unpack, 1);
+	rb_define_method(rb_mMochilo, "pack", rb_mochilo_pack, 1);
 }
 
