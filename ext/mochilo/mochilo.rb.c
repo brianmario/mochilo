@@ -22,6 +22,13 @@ static VALUE rb_mMochilo;
 
 extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
 
+/* Document-method: unpack
+ *
+ * call-seq:
+ *     Mochilo.unpack(banana_pack_str) -> Object
+ *
+ * Unpacks a BananaPack stream into a Ruby object.
+ */
 static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
 {
 	VALUE rb_result;
@@ -40,6 +47,13 @@ static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
 	return rb_result;
 }
 
+/* Document-method: pack
+ *
+ * call-seq:
+ *     Mochilo.pack(obj) -> String
+ *
+ * Packs a Ruby object into BananaPack format.
+ */
 static VALUE rb_mochilo_pack(VALUE self, VALUE rb_obj)
 {
 	mochilo_buf buf;
