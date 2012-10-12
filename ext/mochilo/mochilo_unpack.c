@@ -228,7 +228,7 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 		default:
 		{
 			if (leader < 0x80 || leader >= 0xe0) {
-				*_value = moapi_int8_new(leader);
+				*_value = moapi_int8_new((int8_t)leader);
 				return 0;
 			}
 
