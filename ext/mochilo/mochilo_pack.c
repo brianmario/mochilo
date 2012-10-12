@@ -203,7 +203,9 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 	}
 
 	else {
-		switch (BUILTIN_TYPE(rb_object)) {
+		switch (TYPE(rb_object)) {
+		case T_SYMBOL:
+			rb_object = rb_funcall(rb_object, rb_intern("to_s"), 0);
 		case T_STRING:
 #ifdef HAVE_RUBY_ENCODING_H
 			if (ENCODING_GET(rb_object) != 0)
@@ -231,7 +233,7 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 		}
 	}
 #else // RUBINIUS
-	switch (rb_type(rb_object)) {
+	switch (TYPE(rb_object)) {
 		case T_NIL:
 			mochilo_buf_putc(buf, MSGPACK_T_NIL);
 			return;
@@ -252,6 +254,8 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 			mochilo_pack_bignum(buf, rb_object);
 			return;
 
+		case T_SYMBOL:
+			rb_object = rb_funcall(rb_object, rb_intern("to_s"), 0);
 		case T_STRING:
 #ifdef HAVE_RUBY_ENCODING_H
 			if (ENCODING_GET(rb_object) != 0)
