@@ -3,8 +3,11 @@
 
 #define RSTRING_NOT_MODIFIED
 #include <ruby.h>
+#if defined(HAVE_RUBY_ST_H)
 #include <ruby/st.h>
-#include <ctype.h>
+#else
+#include <st.h>
+#endif
 
 #include "buffer.h"
 
