@@ -40,12 +40,12 @@ MOAPI void moapi_hash_set(mo_value hash, mo_value key, mo_value val)
 	rb_hash_aset((VALUE)hash, (VALUE)key, (VALUE)val);
 }
 
-MOAPI mo_value moapi_uint64_new(uint64_t value, enum msgpack_t int_type)
+MOAPI mo_value moapi_uint64_new(uint64_t value)
 {
 	return (mo_value)rb_ull2inum((long long)value);
 }
 
-MOAPI mo_value moapi_int64_new(int64_t value, enum msgpack_t int_type)
+MOAPI mo_value moapi_int64_new(int64_t value)
 {
 	return (mo_value)rb_ll2inum(value);
 }
@@ -66,12 +66,12 @@ MOAPI mo_value moapi_double_new(double d)
 }
 
 
-#define moapi_uint8_new moapi_uint64_new
-#define moapi_uint16_new moapi_uint64_new
-#define moapi_uint32_new moapi_uint64_new
+#define moapi_uint8_new(n) (mo_value)INT2FIX((int)n) 
+#define moapi_uint16_new(n) (mo_value)INT2FIX((int)n)
+#define moapi_uint32_new(n) (mo_value)ULONG2NUM((unsigned long)n)
 
-#define moapi_int8_new moapi_int64_new
-#define moapi_int16_new moapi_int64_new
-#define moapi_int32_new moapi_int64_new
+#define moapi_int8_new(n) (mo_value)INT2FIX((int)n) 
+#define moapi_int16_new(n) (mo_value)INT2FIX((int)n)
+#define moapi_int32_new(n) (mo_value)LONG2FIX((long)n)
 
 #define moapi_float_new moapi_double_new

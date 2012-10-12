@@ -53,7 +53,7 @@ static inline int unpack_hash(mo_value *_hash, size_t elements, mochilo_src *buf
 	sign##bits##_t integer; \
 	SRC_ENSURE_AVAIL(src, (bits / 8)); \
 	mochilo_src_get##bits##be(src, &integer); \
-	*_value = moapi_##sign##bits##_new(integer, leader); \
+	*_value = moapi_##sign##bits##_new(integer); \
 	return 0; \
 }
 
@@ -228,7 +228,7 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 		default:
 		{
 			if (leader < 0x80 || leader >= 0xe0) {
-				*_value = moapi_int8_new((int8_t)leader, MSGPACK_T_INT8);
+				*_value = moapi_int8_new(leader);
 				return 0;
 			}
 
