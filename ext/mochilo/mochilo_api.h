@@ -66,11 +66,11 @@ MOAPI mo_value moapi_double_new(double d)
 }
 
 
-#define moapi_uint8_new(n) (mo_value)INT2FIX((int)n) 
+#define moapi_uint8_new(n) (mo_value)INT2FIX((int)n)
 #define moapi_uint16_new(n) (mo_value)INT2FIX((int)n)
 #define moapi_uint32_new(n) (mo_value)ULONG2NUM((unsigned long)n)
 
-#define moapi_int8_new(n) (mo_value)INT2FIX((int)n) 
+#define moapi_int8_new(n) (mo_value)INT2FIX((int)n)
 #define moapi_int16_new(n) (mo_value)INT2FIX((int)n)
 #define moapi_int32_new(n) (mo_value)LONG2FIX((long)n)
 
