@@ -8,6 +8,7 @@ struct mochilo_enc_map { const char *name; uint8_t id; }
 %%
 header
 
-Encoding.list.each do |encoding|
+encodings = Encoding.list.reject {|e| e.name == 'ASCII-8BIT'}
+encodings.each do |encoding|
   puts "#{encoding.name}, MSGPACK_ENC_#{encoding.name.gsub('-', '_').upcase}"
 end
