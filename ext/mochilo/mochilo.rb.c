@@ -19,6 +19,9 @@
 #define CSTR2SYM(s) (ID2SYM(rb_intern((s))))
 
 static VALUE rb_mMochilo;
+static VALUE rb_eMochiloError;
+VALUE rb_eMochiloPackError;
+VALUE rb_eMochiloUnpackError;
 
 extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
 
@@ -68,5 +71,9 @@ void Init_mochilo()
 	rb_mMochilo = rb_define_module("Mochilo");
 	rb_define_method(rb_mMochilo, "unpack", rb_mochilo_unpack, 1);
 	rb_define_method(rb_mMochilo, "pack", rb_mochilo_pack, 1);
+
+	rb_eMochiloError = rb_define_class_under(rb_mMochilo, "Error", rb_eStandardError);
+	rb_eMochiloPackError = rb_define_class_under(rb_mMochilo, "PackError", rb_eMochiloError);
+	rb_eMochiloUnpackError = rb_define_class_under(rb_mMochilo, "UnpackError", rb_eMochiloError);
 }
 

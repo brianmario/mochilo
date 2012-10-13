@@ -5,6 +5,8 @@
 
 #include "mochilo.h"
 
+extern VALUE rb_eMochiloPackError;
+
 void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
 
 void mochilo_pack_fixnum(mochilo_buf *buf, VALUE rb_fixnum)
@@ -236,6 +238,10 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 		case T_BIGNUM:
 			mochilo_pack_bignum(buf, rb_object);
 			return;
+
+		default:
+			rb_raise(rb_eMochiloPackError, "Unsupported object type: %s", rb_obj_classname(rb_object));
+			return;
 		}
 	}
 #else // RUBINIUS
@@ -281,6 +287,10 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 
 		case T_FLOAT:
 			mochilo_pack_double(buf, rb_object);
+			return;
+
+		default:
+			rb_raise(rb_eMochiloPackError, "Unsupported object type: %s", rb_obj_classname(rb_object));
 			return;
 	}
 #endif

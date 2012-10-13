@@ -160,4 +160,10 @@ class MochiloPackTest < MiniTest::Unit::TestCase
   def test_pack_map32
     # TODO: not sure how to test this without making a massive 66k item hash
   end
+
+  def test_pack_unsupported_type
+    assert_raises Mochilo::PackError do
+      Mochilo.pack(Object.new)
+    end
+  end
 end
