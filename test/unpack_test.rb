@@ -148,4 +148,10 @@ class MochiloUnpackTest < MiniTest::Unit::TestCase
   def test_unpack_map32
     # TODO: not sure how to test this without making a massive 66k item hash
   end
+
+  def test_unpack_time
+    bpack = "\xC4\x00\x00\x01:\x91\xE4\xAA\b"
+    time = Mochilo.unpack(bpack)
+    assert_equal Time.at(1351067413), time
+  end
 end

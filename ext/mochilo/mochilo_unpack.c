@@ -225,6 +225,16 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			return 0;
 		}
 
+		case MSGPACK_T_TIME:
+		{
+			uint64_t milliseconds;
+
+			SRC_ENSURE_AVAIL(src, 8);
+			mochilo_src_get64be(src, &milliseconds);
+			*_value = moapi_time_new(milliseconds);
+			return 0;
+		}
+
 		default:
 		{
 			if (leader < 0x80 || leader >= 0xe0) {

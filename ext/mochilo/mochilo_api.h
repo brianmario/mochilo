@@ -60,6 +60,11 @@ MOAPI mo_value moapi_atom_new(enum msgpack_t type)
 	}
 }
 
+MOAPI mo_value moapi_time_new(uint64_t milliseconds)
+{
+	return (mo_value)rb_time_new(milliseconds / 1000, (milliseconds % 1000) * 1000);
+}
+
 MOAPI mo_value moapi_double_new(double d)
 {
 	return (mo_value)rb_float_new(d);
