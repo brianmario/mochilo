@@ -24,7 +24,7 @@ aimed at marking a set of bytes as text.
 
 For storing text up to (2^16)-1 bytes.
 Length is stored in unsigned 16-bit big-endian integer.
-Encoding is stored in a signed
+Encoding is stored as an int8
 
 ```
 +--------+--------+--------+--------+----------
@@ -38,7 +38,7 @@ Encoding is stored in a signed
 
 For storing text up to (2^32)-1 bytes.
 Length is stored in unsigned 32-bit big-endian integer.
-Encoding is stored in a signed
+Encoding is stored as an int8
 
 ```
 +--------+--------+--------+--------+--------+--------+----------
