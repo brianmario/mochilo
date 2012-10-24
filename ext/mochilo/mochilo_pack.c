@@ -188,20 +188,40 @@ void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array)
 	}
 }
 
+void mochilo_pack_time(mochilo_buf *buf, VALUE rb_time)
+{
+	double epoch;
+	uint64_t milliseconds;
+
+	epoch = NUM2DBL(rb_funcall(rb_time, rb_intern("to_f"), 0));
+	milliseconds = round(epoch * 1000);
+
+	mochilo_buf_putc(buf, MSGPACK_T_TIME);
+	mochilo_buf_put64be(buf, &milliseconds);
+}
+
 void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 {
 #ifndef RUBINIUS
 	if (rb_object == Qnil) {
 		mochilo_buf_putc(buf, MSGPACK_T_NIL);
 	}
+
 	else if (rb_object == Qtrue) {
 		mochilo_buf_putc(buf, MSGPACK_T_TRUE);
 	}
+
 	else if (rb_object == Qfalse) {
 		mochilo_buf_putc(buf, MSGPACK_T_FALSE);
 	}
+
+	else if (rb_class_of(rb_object) == rb_cTime) {
+		mochilo_pack_time(buf, rb_object);
+	}
+
 	else if (FIXNUM_P(rb_object)) {
 		mochilo_pack_fixnum(buf, rb_object);
+
 	} else if(SYMBOL_P(rb_object)) {
 		rb_object = rb_funcall(rb_object, rb_intern("to_s"), 0);
 #ifdef HAVE_RUBY_ENCODING_H

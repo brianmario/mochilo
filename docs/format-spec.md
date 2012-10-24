@@ -1,3 +1,17 @@
+## Timestamp
+
+### Format Specification
+
+Used for representing a timestamp.
+The timestamp is stored as an unsigned 64-bit big-endian integer - the number of milliseconds since epoch.
+
+```
++--------+--------+--------+--------+--------+--------+--------+--------+--------+
+|  0xc4  |XXXXXXXX|XXXXXXXX|XXXXXXXX|XXXXXXXX|XXXXXXXX|XXXXXXXX|XXXXXXXX|XXXXXXXX|
++--------+--------+--------+--------+--------+--------+--------+--------+--------+
+=> unsigned 64-bit big-endian XXXXXXXX_XXXXXXXX_XXXXXXXX_XXXXXXXX_XXXXXXXX_XXXXXXXX_XXXXXXXX_XXXXXXXX
+```
+
 ## String
 
 The String type is nearly identical to the Raw type from MessagePack but is specifically

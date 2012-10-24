@@ -161,6 +161,12 @@ class MochiloPackTest < MiniTest::Unit::TestCase
     # TODO: not sure how to test this without making a massive 66k item hash
   end
 
+  def test_pack_time
+    time = Time.at(1351067413)
+    bpack = Mochilo.pack(time)
+    assert_equal "\xC4\x00\x00\x01:\x91\xE4\xAA\b", bpack
+  end
+
   def test_pack_unsupported_type
     assert_raises Mochilo::PackError do
       Mochilo.pack(Object.new)

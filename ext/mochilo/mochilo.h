@@ -17,6 +17,7 @@ enum msgpack_t {
 	MSGPACK_T_NIL = 0xc0,
 	MSGPACK_T_FALSE = 0xc2,
 	MSGPACK_T_TRUE = 0xc3,
+	MSGPACK_T_TIME = 0xc4,
 	MSGPACK_T_FLOAT = 0xca,
 	MSGPACK_T_DOUBLE = 0xcb,
 	MSGPACK_T_UINT8	= 0xcc,
