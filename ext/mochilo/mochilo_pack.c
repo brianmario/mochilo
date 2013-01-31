@@ -202,18 +202,9 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 	}
 	else if (FIXNUM_P(rb_object)) {
 		mochilo_pack_fixnum(buf, rb_object);
-	} else if(SYMBOL_P(rb_object)) {
-		rb_object = rb_funcall(rb_object, rb_intern("to_s"), 0);
-#ifdef HAVE_RUBY_ENCODING_H
-		if (ENCODING_GET(rb_object) != 0)
-			mochilo_pack_str(buf, rb_object);
-		else
-#endif
-			mochilo_pack_bytes(buf, rb_object);
 	}
-
 	else {
-		switch (BUILTIN_TYPE(rb_object)) {
+		switch (TYPE(rb_object)) {
 		case T_STRING:
 #ifdef HAVE_RUBY_ENCODING_H
 			if (ENCODING_GET(rb_object) != 0)
@@ -266,8 +257,6 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 			mochilo_pack_bignum(buf, rb_object);
 			return;
 
-		case T_SYMBOL:
-			rb_object = rb_funcall(rb_object, rb_intern("to_s"), 0);
 		case T_STRING:
 #ifdef HAVE_RUBY_ENCODING_H
 			if (ENCODING_GET(rb_object) != 0)
