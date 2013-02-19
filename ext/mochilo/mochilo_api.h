@@ -4,6 +4,17 @@ MOAPI mo_value moapi_bytes_new(const char *src, size_t len)
 	return (mo_value)rb_str_new(src, len);
 }
 
+MOAPI mo_value moapi_sym_new(const char *src, size_t len)
+{
+	VALUE rb_str;
+
+	rb_str = rb_str_new(src, len);
+#ifdef HAVE_RUBY_ENCODING_H
+	rb_enc_set_index(rb_str, rb_usascii_encindex());
+#endif
+	return (mo_value)rb_funcall(rb_str, rb_intern("to_sym"), 0);
+}
+
 #ifdef HAVE_RUBY_ENCODING_H
 MOAPI mo_value moapi_str_new(const char *src, size_t len, enum msgpack_enc_t encoding)
 {

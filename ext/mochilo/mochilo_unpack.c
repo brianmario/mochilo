@@ -159,6 +159,21 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			return unpack_hash(_value, (size_t)length, src);
 		}
 
+		case MSGPACK_T_SYM:
+		{
+			uint16_t length;
+			const char *ptr;
+
+			SRC_ENSURE_AVAIL(src, 2 + 1);
+			mochilo_src_get16be(src, &length);
+
+			if (!(ptr = mochilo_src_peek(src, length)))
+				return -1;
+
+			*_value = moapi_sym_new(ptr, length);
+			return 0;
+		}
+
 #ifdef HAVE_RUBY_ENCODING_H
 		case MSGPACK_T_STR16:
 		{

@@ -112,6 +112,10 @@ class MochiloUnpackTest < MiniTest::Unit::TestCase
     assert_equal str, Mochilo.unpack("\xAE#{str}")
   end
 
+  def test_unpack_symbol
+    assert_equal :test, Mochilo.unpack("\xD4\x00\x04test")
+  end
+
   def test_unpack_raw16
     str = ("a"*255)
     assert_equal str, Mochilo.unpack("\xDA\x00\xFF#{str}")
