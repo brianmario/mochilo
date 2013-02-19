@@ -5,6 +5,18 @@ aimed at marking a set of bytes as text.
 
 ### Format Specification
 
+#### Symbol
+
+For storing symbol names as ASCII text up to (2^16)-1 bytes.
+Length is stored in unsigned 16-bit big-endian integer.
+Encoding is stored as an int8
+
+```
++--------+--------+--------+----------
+|  0xd4  |XXXXXXXX|XXXXXXXX|...N bytes
++--------+--------+--------+----------
+=> XXXXXXXX_XXXXXXXX (=N) bytes of raw bytes.
+```
 
 #### String16
 
@@ -33,27 +45,3 @@ Encoding is stored as an int8
 => XXXXXXXX_XXXXXXXX_XXXXXXXX_XXXXXXXX (=N) bytes of raw bytes.
 => YYYYYYYY encoding flag
 ```
-
-## Snappy
-
-The Snappy type is sort of a superset of the Raw or String types in BananaPack, but the
-contents are compressed with [Snappy](http://code.google.com/p/snappy). It's meant to be
-used transparently when a Raw or String type is larger than a configured size.
-
-*Needs to be discussed*
-
-The contents of the compressed content will either be a Raw16, Raw32, String16 or String32
-including it's leader byte in order for the parser to begin parsing that type as if it were
-inline in the stream uncompressed at that position.
-
-*Needs to be discussed*
-
-### Format Specification
-
-#### Snappy16
-
-*TODO*
-
-#### Snappy32
-
-*TODO*

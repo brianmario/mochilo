@@ -134,6 +134,27 @@ void mochilo_pack_bytes(mochilo_buf *buf, VALUE rb_bytes)
 	mochilo_buf_put(buf, RSTRING_PTR(rb_bytes), size);
 }
 
+void mochilo_pack_symbol(mochilo_buf *buf, VALUE rb_symbol)
+{
+	VALUE rb_str;
+	long size;
+
+	rb_str = rb_funcall(rb_symbol, rb_intern("to_s"), 0);
+	size = RSTRING_LEN(rb_str);
+
+	if (size < 0x10000) {
+		uint16_t lead = size;
+		mochilo_buf_putc(buf, MSGPACK_T_SYM);
+		mochilo_buf_put16be(buf, &lead);
+	}
+
+	else {
+		rb_raise(rb_eMochiloPackError, "Symbol too long: must be under %d bytes, %ld given", size, 0x10000);
+	}
+
+	mochilo_buf_put(buf, RSTRING_PTR(rb_str), size);
+}
+
 #ifdef HAVE_RUBY_ENCODING_H
 void mochilo_pack_str(mochilo_buf *buf, VALUE rb_str)
 {
@@ -202,9 +223,12 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 	}
 	else if (FIXNUM_P(rb_object)) {
 		mochilo_pack_fixnum(buf, rb_object);
+	} else if(SYMBOL_P(rb_object)) {
+		mochilo_pack_symbol(buf, rb_object);
 	}
+
 	else {
-		switch (TYPE(rb_object)) {
+		switch (BUILTIN_TYPE(rb_object)) {
 		case T_STRING:
 #ifdef HAVE_RUBY_ENCODING_H
 			if (ENCODING_GET(rb_object) != 0)
@@ -255,6 +279,10 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 
 		case T_BIGNUM:
 			mochilo_pack_bignum(buf, rb_object);
+			return;
+
+		case T_SYMBOL:
+			mochilo_pack_symbol(buf, rb_object);
 			return;
 
 		case T_STRING:

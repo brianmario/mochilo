@@ -135,6 +135,25 @@ class MochiloPackTest < MiniTest::Unit::TestCase
     assert_equal "\x81\x01\x02", Mochilo.pack({1 => 2})
   end
 
+  def test_pack_symbol
+    assert_equal "\xD4\x00\x04test", Mochilo.pack(:test)
+  end
+
+  def test_pack_symbol_size
+    too_big = ("a"*0x10001).to_sym
+    fine = ("a"*0xfffe).to_sym
+
+    assert_raises Mochilo::PackError do
+      Mochilo.pack(too_big)
+    end
+
+    begin
+      Mochilo.pack(fine)
+    rescue Mochilo::PackError => boom
+      assert_nil boom, "exception raised, expected nothing"
+    end
+  end
+
   def test_pack_map16
     bytes = ("a"*34).bytes.to_a
     assert_equal "\xDC\x00\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", Mochilo.pack(bytes)
@@ -147,10 +166,6 @@ class MochiloPackTest < MiniTest::Unit::TestCase
   def test_pack_unsupported_type
     assert_raises Mochilo::PackError do
       Mochilo.pack(Object.new)
-    end
-
-    assert_raises Mochilo::PackError do
-      Mochilo.pack(:some_symbol)
     end
   end
 end
