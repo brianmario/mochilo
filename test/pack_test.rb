@@ -102,6 +102,23 @@ class MochiloPackTest < MiniTest::Unit::TestCase
     # TODO: not sure how to test this without making a massive 66k string
   end
 
+  if defined?(Encoding)
+    def test_pack_symbol_as_string
+      str = "symbol".force_encoding('UTF-8')
+
+      # NOTE: calling to_sym here ends up creating a symbol tagged with the
+      # US-ASCII encoding so we're checking for that (\x01) instead of
+      # UTF-8 (which is \x00)
+      assert_equal "\xD8\x00\x06\x01symbol", Mochilo.pack(str.to_sym)
+
+    end
+  else
+    def test_pack_symbol_as_string
+      str = "symbol"
+      assert_equal "\xA6symbol", Mochilo.pack(str.to_sym)
+    end
+  end
+
   def test_pack_fixed_raw
     str = "this is a test"
     assert_equal "\xAE#{str}", Mochilo.pack(str)
@@ -147,10 +164,6 @@ class MochiloPackTest < MiniTest::Unit::TestCase
   def test_pack_unsupported_type
     assert_raises Mochilo::PackError do
       Mochilo.pack(Object.new)
-    end
-
-    assert_raises Mochilo::PackError do
-      Mochilo.pack(:some_symbol)
     end
   end
 end
