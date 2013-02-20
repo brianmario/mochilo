@@ -25,14 +25,7 @@ VALUE rb_eMochiloUnpackError;
 
 extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
 
-/* Document-method: unpack
- *
- * call-seq:
- *     Mochilo.unpack(banana_pack_str) -> Object
- *
- * Unpacks a BananaPack stream into a Ruby object.
- */
-static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
+static VALUE rb_mochilo__unpack(VALUE rb_buffer, int trusted)
 {
 	VALUE rb_result;
 	int error = -1;
@@ -42,12 +35,39 @@ static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
 
 	source.ptr = RSTRING_PTR(rb_buffer);
 	source.end = source.ptr + RSTRING_LEN(rb_buffer);
+	source.trusted = trusted;
 
 	error = mochilo_unpack_one((mo_value)&rb_result, &source);
 	if (error < 0)
-		rb_raise(rb_eRuntimeError, "unpack failed (%d)", error);
+		rb_raise(rb_eMochiloUnpackError, "unpack failed (%d)", error);
 
 	return rb_result;
+}
+
+/* Document-method: unpack
+ *
+ * call-seq:
+ *     Mochilo.unpack(banana_pack_str) -> Object
+ *
+ * Unpacks a BananaPack stream into a Ruby object.
+ */
+static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
+{
+	return rb_mochilo__unpack(rb_buffer, 0);
+}
+
+/* Document-method: unpack_unsafe
+ *
+ * call-seq:
+ *     Mochilo.unpack_unsafe(banana_pack_str) -> Object
+ *
+ * Unpacks a BananaPack stream into a Ruby object, in unsafe mode.
+ * Only use this function if +banana_pack_str+ is trusted; otherwise
+ * symbol DoS attacks are possible.
+ */
+static VALUE rb_mochilo_unpack_unsafe(VALUE self, VALUE rb_buffer)
+{
+	return rb_mochilo__unpack(rb_buffer, 1);
 }
 
 /* Document-method: pack
@@ -70,6 +90,7 @@ void Init_mochilo()
 {
 	rb_mMochilo = rb_define_module("Mochilo");
 	rb_define_method(rb_mMochilo, "unpack", rb_mochilo_unpack, 1);
+	rb_define_method(rb_mMochilo, "unpack_unsafe", rb_mochilo_unpack_unsafe, 1);
 	rb_define_method(rb_mMochilo, "pack", rb_mochilo_pack, 1);
 
 	rb_eMochiloError = rb_define_class_under(rb_mMochilo, "Error", rb_eStandardError);

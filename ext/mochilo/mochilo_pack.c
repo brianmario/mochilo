@@ -136,23 +136,22 @@ void mochilo_pack_bytes(mochilo_buf *buf, VALUE rb_bytes)
 
 void mochilo_pack_symbol(mochilo_buf *buf, VALUE rb_symbol)
 {
-	VALUE rb_str;
 	long size;
+	const char *name;
 
-	rb_str = rb_funcall(rb_symbol, rb_intern("to_s"), 0);
-	size = RSTRING_LEN(rb_str);
+	name = rb_id2name(SYM2ID(rb_symbol));
+	size = strlen(name);
 
-	if (size < 0x10000) {
-		uint16_t lead = size;
+	if (size < 0x100) {
+		uint8_t lead = size;
 		mochilo_buf_putc(buf, MSGPACK_T_SYM);
-		mochilo_buf_put16be(buf, &lead);
+		mochilo_buf_putc(buf, lead);
+	} else {
+		rb_raise(rb_eMochiloPackError,
+			"Symbol too long: must be under %d bytes, %ld given", 0x100, size);
 	}
 
-	else {
-		rb_raise(rb_eMochiloPackError, "Symbol too long: must be under %d bytes, %ld given", size, 0x10000);
-	}
-
-	mochilo_buf_put(buf, RSTRING_PTR(rb_str), size);
+	mochilo_buf_put(buf, name, size);
 }
 
 #ifdef HAVE_RUBY_ENCODING_H
@@ -223,10 +222,10 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 	}
 	else if (FIXNUM_P(rb_object)) {
 		mochilo_pack_fixnum(buf, rb_object);
-	} else if(SYMBOL_P(rb_object)) {
+	}
+	else if (SYMBOL_P(rb_object)) {
 		mochilo_pack_symbol(buf, rb_object);
 	}
-
 	else {
 		switch (BUILTIN_TYPE(rb_object)) {
 		case T_STRING:
@@ -255,7 +254,8 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 			return;
 
 		default:
-			rb_raise(rb_eMochiloPackError, "Unsupported object type: %s", rb_obj_classname(rb_object));
+			rb_raise(rb_eMochiloPackError,
+				"Unsupported object type: %s", rb_obj_classname(rb_object));
 			return;
 		}
 	}
@@ -307,7 +307,8 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 			return;
 
 		default:
-			rb_raise(rb_eMochiloPackError, "Unsupported object type: %s", rb_obj_classname(rb_object));
+			rb_raise(rb_eMochiloPackError,
+				"Unsupported object type: %s", rb_obj_classname(rb_object));
 			return;
 	}
 #endif
