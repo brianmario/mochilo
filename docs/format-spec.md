@@ -7,15 +7,14 @@ aimed at marking a set of bytes as text.
 
 #### Symbol
 
-For storing symbol names as ASCII text up to (2^16)-1 bytes.
-Length is stored in unsigned 16-bit big-endian integer.
-Encoding is stored as an int8
+For storing symbol names as ASCII text up to (2^8)-1 bytes.
+Length is stored in unsigned 8-bit integer.
 
 ```
-+--------+--------+--------+----------
-|  0xd4  |XXXXXXXX|XXXXXXXX|...N bytes
-+--------+--------+--------+----------
-=> XXXXXXXX_XXXXXXXX (=N) bytes of raw bytes.
++--------+--------+----------
+|  0xd4  |XXXXXXXX|...N bytes
++--------+--------+----------
+=> XXXXXXXX (=N) bytes of raw bytes.
 ```
 
 #### String16

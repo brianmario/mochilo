@@ -65,6 +65,7 @@ typedef struct {
 typedef struct {
 	const char *ptr;
 	const char *end;
+	int trusted;
 } mochilo_src;
 
 void mochilo_buf_init(mochilo_buf *buf);

@@ -143,6 +143,7 @@ enum msgpack_err_t {
 	MSGPACK_EEOF = -1,
 	MSGPACK_EINVALID = -2,
 	MSGPACK_ENOTHING = -3,
+	MSGPACK_EUNSAFE = -4,
 };
 
 typedef void * mo_value;

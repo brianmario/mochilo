@@ -113,7 +113,11 @@ class MochiloUnpackTest < MiniTest::Unit::TestCase
   end
 
   def test_unpack_symbol
-    assert_equal :test, Mochilo.unpack("\xD4\x00\x04test")
+    assert_raises Mochilo::UnpackError do
+      Mochilo.unpack("\xD4\x04test")
+    end
+
+    assert_equal :test, Mochilo.unpack_unsafe("\xD4\x04test")
   end
 
   def test_unpack_raw16
