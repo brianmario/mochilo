@@ -161,11 +161,15 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 
 		case MSGPACK_T_SYM:
 		{
-			uint16_t length;
+			uint8_t length;
 			const char *ptr;
+			
+			if (!src->trusted) {
+				return MSGPACK_EUNSAFE;
+			}
 
-			SRC_ENSURE_AVAIL(src, 2 + 1);
-			mochilo_src_get16be(src, &length);
+			SRC_ENSURE_AVAIL(src, 1);
+			mochilo_src_get8be(src, &length);
 
 			if (!(ptr = mochilo_src_peek(src, length)))
 				return -1;

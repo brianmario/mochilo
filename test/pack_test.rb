@@ -136,12 +136,12 @@ class MochiloPackTest < MiniTest::Unit::TestCase
   end
 
   def test_pack_symbol
-    assert_equal "\xD4\x00\x04test", Mochilo.pack(:test)
+    assert_equal "\xD4\x04test", Mochilo.pack(:test)
   end
 
   def test_pack_symbol_size
-    too_big = ("a"*0x10001).to_sym
-    fine = ("a"*0xfffe).to_sym
+    too_big = ("a"*0x100).to_sym
+    fine = ("a"*0xff).to_sym
 
     assert_raises Mochilo::PackError do
       Mochilo.pack(too_big)

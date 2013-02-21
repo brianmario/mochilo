@@ -6,13 +6,16 @@ MOAPI mo_value moapi_bytes_new(const char *src, size_t len)
 
 MOAPI mo_value moapi_sym_new(const char *src, size_t len)
 {
-	VALUE rb_str;
+	char *symbol;
 
-	rb_str = rb_str_new(src, len);
-#ifdef HAVE_RUBY_ENCODING_H
-	rb_enc_set_index(rb_str, rb_usascii_encindex());
-#endif
-	return (mo_value)rb_funcall(rb_str, rb_intern("to_sym"), 0);
+	if (len > 0xFF)
+		rb_raise(rb_eArgError, "Symbol too long to encode in BananaPack");
+
+	symbol = alloca(len + 1);
+	memcpy(symbol, src, len);
+	symbol[len] = '\0';
+
+	return (mo_value)ID2SYM(rb_intern(symbol));
 }
 
 #ifdef HAVE_RUBY_ENCODING_H
