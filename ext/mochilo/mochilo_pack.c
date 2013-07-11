@@ -7,7 +7,7 @@
 
 extern VALUE rb_eMochiloPackError;
 
-void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
+void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted);
 
 void mochilo_pack_fixnum(mochilo_buf *buf, VALUE rb_fixnum)
 {
@@ -73,11 +73,16 @@ void mochilo_pack_bignum(mochilo_buf *buf, VALUE rb_bignum)
 	}
 }
 
+struct mochilo_hash_pack {
+	mochilo_buf *buf;
+	int trusted;
+};
+
 static int hash_callback(VALUE key, VALUE val, VALUE opaque)
 {
-	mochilo_buf *buf = (mochilo_buf *)opaque;
-	mochilo_pack_one(buf, key);
-	mochilo_pack_one(buf, val);
+	struct mochilo_hash_pack* hash_pack = (struct mochilo_hash_pack*)opaque;
+	mochilo_pack_one(hash_pack->buf, key, hash_pack->trusted);
+	mochilo_pack_one(hash_pack->buf, val, hash_pack->trusted);
 	return 0;
 }
 
@@ -88,9 +93,13 @@ void mochilo_pack_double(mochilo_buf *buf, VALUE rb_double)
 	mochilo_buf_put64be(buf, &d);
 }
 
-void mochilo_pack_hash(mochilo_buf *buf, VALUE rb_hash)
+void mochilo_pack_hash(mochilo_buf *buf, VALUE rb_hash, int trusted)
 {
+	struct mochilo_hash_pack hash_pack;
 	long size = RHASH_SIZE(rb_hash);
+
+	hash_pack.buf = buf;
+	hash_pack.trusted = trusted;
 
 	if (size < 0x10) {
 		uint8_t lead = 0x80 | size;
@@ -108,7 +117,7 @@ void mochilo_pack_hash(mochilo_buf *buf, VALUE rb_hash)
 		mochilo_buf_put32be(buf, &size);
 	}
 
-	rb_hash_foreach(rb_hash, &hash_callback, (VALUE)buf);
+	rb_hash_foreach(rb_hash, &hash_callback, (VALUE)&hash_pack);
 }
 
 void mochilo_pack_bytes(mochilo_buf *buf, VALUE rb_bytes)
@@ -183,7 +192,7 @@ void mochilo_pack_str(mochilo_buf *buf, VALUE rb_str)
 }
 #endif
 
-void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array)
+void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array, int trusted)
 {
 	long i, size = RARRAY_LEN(rb_array);
 
@@ -204,11 +213,11 @@ void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array)
 	}
 
 	for (i = 0; i < size; i++) {
-		mochilo_pack_one(buf, rb_ary_entry(rb_array, i));
+		mochilo_pack_one(buf, rb_ary_entry(rb_array, i), trusted);
 	}
 }
 
-void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
+void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted)
 {
 #ifndef RUBINIUS
 	if (rb_object == Qnil) {
@@ -224,7 +233,10 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 		mochilo_pack_fixnum(buf, rb_object);
 	}
 	else if (SYMBOL_P(rb_object)) {
-		mochilo_pack_symbol(buf, rb_object);
+		if (trusted)
+			mochilo_pack_symbol(buf, rb_object);
+		else
+			mochilo_pack_str(buf, rb_obj_as_string(rb_object));
 	}
 	else {
 		switch (BUILTIN_TYPE(rb_object)) {
@@ -238,11 +250,11 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 			return;
 
 		case T_HASH:
-			mochilo_pack_hash(buf, rb_object);
+			mochilo_pack_hash(buf, rb_object, trusted);
 			return;
 
 		case T_ARRAY:
-			mochilo_pack_array(buf, rb_object);
+			mochilo_pack_array(buf, rb_object, trusted);
 			return;
 
 		case T_FLOAT:
@@ -282,7 +294,10 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 			return;
 
 		case T_SYMBOL:
-			mochilo_pack_symbol(buf, rb_object);
+			if (trusted)
+				mochilo_pack_symbol(buf, rb_object);
+			else
+				mochilo_pack_str(buf, rb_obj_as_string(rb_object));
 			return;
 
 		case T_STRING:
@@ -295,11 +310,11 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 			return;
 
 		case T_HASH:
-			mochilo_pack_hash(buf, rb_object);
+			mochilo_pack_hash(buf, rb_object, trusted);
 			return;
 
 		case T_ARRAY:
-			mochilo_pack_array(buf, rb_object);
+			mochilo_pack_array(buf, rb_object, trusted);
 			return;
 
 		case T_FLOAT:
