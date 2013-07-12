@@ -80,7 +80,7 @@ struct mochilo_hash_pack {
 
 static int hash_callback(VALUE key, VALUE val, VALUE opaque)
 {
-	struct mochilo_hash_pack* hash_pack = (struct mochilo_hash_pack*)opaque;
+	struct mochilo_hash_pack *hash_pack = (struct mochilo_hash_pack*)opaque;
 	mochilo_pack_one(hash_pack->buf, key, hash_pack->trusted);
 	mochilo_pack_one(hash_pack->buf, val, hash_pack->trusted);
 	return 0;
