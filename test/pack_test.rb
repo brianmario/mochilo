@@ -136,7 +136,8 @@ class MochiloPackTest < MiniTest::Unit::TestCase
   end
 
   def test_pack_symbol
-    assert_equal "\xD4\x04test", Mochilo.pack(:test)
+    assert_equal "\xD8\x00\x04\x01test", Mochilo.pack(:test)
+    assert_equal "\xD4\x04test", Mochilo.pack_unsafe(:test)
   end
 
   def test_pack_symbol_size
@@ -144,11 +145,11 @@ class MochiloPackTest < MiniTest::Unit::TestCase
     fine = ("a"*0xff).to_sym
 
     assert_raises Mochilo::PackError do
-      Mochilo.pack(too_big)
+      Mochilo.pack_unsafe(too_big)
     end
 
     begin
-      Mochilo.pack(fine)
+      Mochilo.pack_unsafe(fine)
     rescue Mochilo::PackError => boom
       assert_nil boom, "exception raised, expected nothing"
     end

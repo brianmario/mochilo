@@ -23,7 +23,7 @@ static VALUE rb_eMochiloError;
 VALUE rb_eMochiloPackError;
 VALUE rb_eMochiloUnpackError;
 
-extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
+extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted);
 
 static VALUE rb_mochilo__unpack(VALUE rb_buffer, int trusted)
 {
@@ -82,7 +82,23 @@ static VALUE rb_mochilo_pack(VALUE self, VALUE rb_obj)
 	mochilo_buf buf;
 
 	mochilo_buf_init(&buf);
-	mochilo_pack_one(&buf, rb_obj);
+	mochilo_pack_one(&buf, rb_obj, 0);
+	return mochilo_buf_flush(&buf);
+}
+
+/* Document-method: pack
+ *
+ * call-seq:
+ *     Mochilo.pack_unsafe(obj) -> String
+ *
+ * Packs a Ruby object into BananaPack format.
+ */
+static VALUE rb_mochilo_pack_unsafe(VALUE self, VALUE rb_obj)
+{
+	mochilo_buf buf;
+
+	mochilo_buf_init(&buf);
+	mochilo_pack_one(&buf, rb_obj, 1);
 	return mochilo_buf_flush(&buf);
 }
 
@@ -92,6 +108,7 @@ void Init_mochilo()
 	rb_define_method(rb_mMochilo, "unpack", rb_mochilo_unpack, 1);
 	rb_define_method(rb_mMochilo, "unpack_unsafe", rb_mochilo_unpack_unsafe, 1);
 	rb_define_method(rb_mMochilo, "pack", rb_mochilo_pack, 1);
+	rb_define_method(rb_mMochilo, "pack_unsafe", rb_mochilo_pack_unsafe, 1);
 
 	rb_eMochiloError = rb_define_class_under(rb_mMochilo, "Error", rb_eStandardError);
 	rb_eMochiloPackError = rb_define_class_under(rb_mMochilo, "PackError", rb_eMochiloError);
