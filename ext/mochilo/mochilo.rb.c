@@ -91,7 +91,9 @@ static VALUE rb_mochilo_pack(VALUE self, VALUE rb_obj)
  * call-seq:
  *     Mochilo.pack_unsafe(obj) -> String
  *
- * Packs a Ruby object into BananaPack format.
+ * Packs a Ruby object into BananaPack format, in unsafe mode.
+ * This enables the Symbol type durring serialization and will
+ * have to be deserialized in unsafe mode as well.
  */
 static VALUE rb_mochilo_pack_unsafe(VALUE self, VALUE rb_obj)
 {
