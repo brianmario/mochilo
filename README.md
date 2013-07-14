@@ -22,7 +22,7 @@ hash = Mochilo.unpack(bpack)
 
 Notice how `key` came back into Ruby as a String instead of a Symbol? This is because the `pack` method of Mochilo only generates "safe" bpack.
 
-bpack without Symbols is considered "safe" for Ruby because in Ruby, Symbols aren't garbage collected. So if you accept arbitrary bpack from an untrusted source you could end up parsing bpack that would exhaust the memory of your server.
+bpack without Symbols is considered "safe" for Ruby because in Ruby, Symbols aren't garbage collected. So if you unpack arbitrary bpack from an untrusted source you could end up parsing bpack that would exhaust the memory of your server.
 
 To generate "unsafe" bpack, use `pack_unsafe` and `unpack_unsafe` methods instead:
 
