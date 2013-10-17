@@ -1,3 +1,3 @@
 module Mochilo
-  VERSION = "0.7"
+  VERSION = "1.0"
 end

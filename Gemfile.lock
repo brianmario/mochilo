@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    mochilo (0.7)
+    mochilo (1.0)
 
 GEM
   remote: https://rubygems.org/
