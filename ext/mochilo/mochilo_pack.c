@@ -271,7 +271,7 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted)
 
 		default:
 			rb_raise(rb_eMochiloPackError,
-					"Unsupported object type: %s", rb_obj_classname(rb_object));
+				"Unsupported object type: %s", rb_obj_classname(rb_object));
 			return;
 	}
 #else // RUBINIUS
