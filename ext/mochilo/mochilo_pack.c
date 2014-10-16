@@ -220,60 +220,60 @@ void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array, int trusted)
 void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted)
 {
 #ifndef RUBINIUS
-  switch (rb_type(rb_object)) {
-  case T_NIL:
-    mochilo_buf_putc(buf, MSGPACK_T_NIL);
-    return;
+	switch (rb_type(rb_object)) {
+		case T_NIL:
+			mochilo_buf_putc(buf, MSGPACK_T_NIL);
+			return;
 
-  case T_TRUE:
-    mochilo_buf_putc(buf, MSGPACK_T_TRUE);
-    return;
+		case T_TRUE:
+			mochilo_buf_putc(buf, MSGPACK_T_TRUE);
+			return;
 
-  case T_FALSE:
-    mochilo_buf_putc(buf, MSGPACK_T_FALSE);
-    return;
+		case T_FALSE:
+			mochilo_buf_putc(buf, MSGPACK_T_FALSE);
+			return;
 
-  case T_FIXNUM:
-    mochilo_pack_fixnum(buf, rb_object);
-    return;
+		case T_FIXNUM:
+			mochilo_pack_fixnum(buf, rb_object);
+			return;
 
-  case T_SYMBOL:
-    if (trusted)
-      mochilo_pack_symbol(buf, rb_object);
-    else
-      mochilo_pack_str(buf, rb_obj_as_string(rb_object));
-    return;
+		case T_SYMBOL:
+			if (trusted)
+				mochilo_pack_symbol(buf, rb_object);
+			else
+				mochilo_pack_str(buf, rb_obj_as_string(rb_object));
+			return;
 
-  case T_STRING:
+		case T_STRING:
 #ifdef HAVE_RUBY_ENCODING_H
-    if (ENCODING_GET(rb_object) != 0)
-      mochilo_pack_str(buf, rb_object);
-    else
+			if (ENCODING_GET(rb_object) != 0)
+				mochilo_pack_str(buf, rb_object);
+			else
 #endif
-      mochilo_pack_bytes(buf, rb_object);
-    return;
+				mochilo_pack_bytes(buf, rb_object);
+			return;
 
-  case T_HASH:
-    mochilo_pack_hash(buf, rb_object, trusted);
-    return;
+		case T_HASH:
+			mochilo_pack_hash(buf, rb_object, trusted);
+			return;
 
-  case T_ARRAY:
-    mochilo_pack_array(buf, rb_object, trusted);
-    return;
+		case T_ARRAY:
+			mochilo_pack_array(buf, rb_object, trusted);
+			return;
 
-  case T_FLOAT:
-    mochilo_pack_double(buf, rb_object);
-    return;
+		case T_FLOAT:
+			mochilo_pack_double(buf, rb_object);
+			return;
 
-  case T_BIGNUM:
-    mochilo_pack_bignum(buf, rb_object);
-    return;
+		case T_BIGNUM:
+			mochilo_pack_bignum(buf, rb_object);
+			return;
 
-  default:
-    rb_raise(rb_eMochiloPackError,
-        "Unsupported object type: %s", rb_obj_classname(rb_object));
-    return;
-}
+		default:
+			rb_raise(rb_eMochiloPackError,
+					"Unsupported object type: %s", rb_obj_classname(rb_object));
+			return;
+	}
 #else // RUBINIUS
 	switch (rb_type(rb_object)) {
 		case T_NIL:
