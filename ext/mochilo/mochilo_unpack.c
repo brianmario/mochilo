@@ -163,7 +163,7 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 		{
 			uint8_t length;
 			const char *ptr;
-			
+
 			if (!src->trusted) {
 				return MSGPACK_EUNSAFE;
 			}
@@ -178,7 +178,6 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			return 0;
 		}
 
-#ifdef HAVE_RUBY_ENCODING_H
 		case MSGPACK_T_STR16:
 		{
 			uint16_t length;
@@ -212,7 +211,6 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			*_value = moapi_str_new(ptr, length, encoding);
 			return 0;
 		}
-#endif
 
 		case MSGPACK_T_RAW16:
 		{
@@ -276,4 +274,3 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 		}
 	}
 }
-

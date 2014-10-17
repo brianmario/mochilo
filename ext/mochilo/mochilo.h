@@ -150,9 +150,7 @@ typedef void * mo_value;
 typedef uint64_t mo_integer;
 int mochilo_unpack_one(mo_value *_value, mochilo_src *src);
 
-#ifdef HAVE_RUBY_ENCODING_H
-#	include <ruby/encoding.h>
-#	include "encodings.h"
-#endif
+#include <ruby/encoding.h>
+#include "encodings.h"
 
 #endif
