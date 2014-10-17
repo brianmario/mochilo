@@ -1,6 +1,6 @@
 language: ruby
 script:
-  - bundle exec rake test
+  - script/testsuite
 rvm:
   - 1.9.3
   - 2.0.0
