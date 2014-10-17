@@ -91,11 +91,9 @@ class MochiloPackTest < Minitest::Test
     assert_equal "\xD3\xFF\xFF\xFF\xFB\x00\x00\x00\x01", Mochilo.pack(-21474836479)
   end
 
-  if defined?(Encoding)
-    def test_pack_str16
-      str = "this is a test".force_encoding('UTF-8')
-      assert_equal "\xD8\x00\x0E\x00#{str}", Mochilo.pack(str)
-    end
+  def test_pack_str16
+    str = "this is a test".force_encoding('UTF-8')
+    assert_equal "\xD8\x00\x0E\x00#{str}", Mochilo.pack(str)
   end
 
   def xtest_pack_str32
