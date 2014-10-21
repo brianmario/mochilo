@@ -1,8 +1,6 @@
 # Mochilo
 
-Mochilo is a Ruby library implementing the MessagePack protocol spec.
-
-It takes advantage of the new `ext` types to extend the protocol, adding 3 new
+Mochilo is a Ruby library implementing the BananaPack protocol. BananaPack is a superset of MessagePack. It takes advantage of the new `ext` types to extend the protocol, adding 3 new
 types which are used for serializing strings with an encoding other than UTF-8.
 
 The mapping of the `ext` types are:
