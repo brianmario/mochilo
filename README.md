@@ -1,42 +1,33 @@
 # Mochilo
 
-Mochilo is a Ruby library implementing the BananaPack protocol. BananaPack is a superset of MessagePack. It adds three new types to the protocol: Symbol and String in 16 and 32 bit lengths.
+Mochilo is a Ruby library implementing the MessagePack protocol spec.
 
-The Symbol type is a String of text composed of ASCII characters with a maximum length of (2^8)-1 bytes.
+It takes advantage of the new `ext` types to extend the protocol, adding 3 new
+types which are used for serializing strings with an encoding other than UTF-8.
 
-The String16 and String32 types are exactly the same as the [Raw16](http://wiki.msgpack.org/display/MSGPACK/Format+specification#Formatspecification-raw16) and [Raw32](http://wiki.msgpack.org/display/MSGPACK/Format+specification#Formatspecification-raw32) types from MessagePack except there is an encoding flag stored along with the bytes. This allows the format to differentiate binary from text.
+The mapping of the `ext` types are:
 
-Check out docs/format-spec.md for more detailed information on the differences between BananaPack and MessagePack.
+* `ext8`  - A String in an encoding other than UTF-8 who's length is between 0 and (2^8)-1 bytes.
+* `ext16` - A String in an encoding other than UTF-8 who's length is between 0 and (2^16)-1 bytes.
+* `ext32` - A String in an encoding other than UTF-8 who's length is between 0 and (2^32)-1 bytes.
+
+Also check out [docs/format-spec.md](docs/format-spec.md) for more detailed information on these types.
+
+Strings tagged as `ASCII-8BIT` are encoded as the `bin` types in the MessagePack spec. The type that's used depends on the length of the string. Check out the spec [here](https://github.com/msgpack/msgpack/blob/master/spec.md) for more information on those types.
 
 ## Usage
 
 ``` ruby
 require 'mochilo'
 obj = {key: "value"}
-bpack = Mochilo.pack(obj)
+packed = Mochilo.pack(obj)
 #=> "\x81\xD8\x00\x03\x01key\xD8\x00\x05\x00value"
 
-hash = Mochilo.unpack(bpack)
+hash = Mochilo.unpack(packed)
 #=> {"key"=>"value"}
 ```
 
-Notice how `key` came back into Ruby as a String instead of a Symbol? This is because the `pack` method of Mochilo only generates "safe" bpack.
-
-bpack without Symbols is considered "safe" for Ruby because in Ruby, Symbols aren't garbage collected. So if you unpack arbitrary bpack from an untrusted or malicious source, you could end up potentially exhausting the memory of your server.
-
-To generate "unsafe" bpack, use `pack_unsafe` and `unpack_unsafe` methods instead:
-
-``` ruby
-require 'mochilo'
-obj = {key: "value"}
-bpack = Mochilo.pack_unsafe(obj)
-#=> "\x81\xD4\x03key\xD8\x00\x05\x00value"
-
-hash = Mochilo.unpack_unsafe(bpack)
-#=> {:key=>"value"}
-```
-
-If you attempt to unpack "unsafe" bpack without using `unpack_unsafe`, an exception is raised.
+MessagePack doesn't have a symbol type so `key` came back as a String.
 
 ## Supported Ruby Types
 
@@ -47,7 +38,7 @@ If any other object type is encountered during serialization, an exception is ra
 * Fixnum
 * Bignum
 * Float
-* Symbol
+* Symbol (serialized as a String)
 * String (with encoding)
 * nil
 * true
