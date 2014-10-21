@@ -136,7 +136,7 @@ void mochilo_pack_bytes(mochilo_buf *buf, VALUE rb_bytes)
 	} else {
 		// there is no bin 64
 		rb_raise(rb_eMochiloPackError,
-			"Binary string cannot be larger than %d bytes", 0x100000000);
+			"Binary string cannot be larger than %ld bytes", 0x100000000);
 	}
 
 	mochilo_buf_put(buf, RSTRING_PTR(rb_bytes), size);
@@ -172,7 +172,7 @@ void mochilo_pack_str(mochilo_buf *buf, VALUE rb_str)
 		} else {
 			// there is no str 64
 			rb_raise(rb_eMochiloPackError,
-				"String cannot be larger than %d bytes", 0x100000000);
+				"String cannot be larger than %ld bytes", 0x100000000);
 		}
 	} else {
 		// if another encoding is used we need to use our custom types
@@ -190,7 +190,7 @@ void mochilo_pack_str(mochilo_buf *buf, VALUE rb_str)
 		} else {
 			// there is no ext 64
 			rb_raise(rb_eMochiloPackError,
-				"String cannot be larger than %d bytes", 0x100000000);
+				"String cannot be larger than %ld bytes", 0x100000000);
 		}
 
 		enc2id = mochilo_encoding_to_id(enc_name, (unsigned int)strlen(enc_name));
