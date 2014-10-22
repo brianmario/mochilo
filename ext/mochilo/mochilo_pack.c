@@ -244,10 +244,6 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 		mochilo_pack_fixnum(buf, rb_object);
 		return;
 
-	case T_SYMBOL:
-		mochilo_pack_str(buf, rb_obj_as_string(rb_object));
-		return;
-
 	case T_STRING:
 		if (ENCODING_GET(rb_object) != 0)
 			mochilo_pack_str(buf, rb_object);

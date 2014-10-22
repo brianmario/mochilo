@@ -17,7 +17,7 @@ Strings tagged as `ASCII-8BIT` are encoded as the `bin` types in the MessagePack
 
 ``` ruby
 require 'mochilo'
-obj = {key: "value"}
+obj = {"key" => "value"}
 packed = Mochilo.pack(obj)
 #=> "\x81\xD8\x00\x03\x01key\xD8\x00\x05\x00value"
 
@@ -36,7 +36,6 @@ If any other object type is encountered during serialization, an exception is ra
 * Fixnum
 * Bignum
 * Float
-* Symbol (serialized as a String)
 * String (with encoding)
 * nil
 * true

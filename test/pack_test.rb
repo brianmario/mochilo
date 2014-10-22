@@ -275,4 +275,10 @@ class MochiloPackTest < Minitest::Test
       Mochilo.pack(Object.new)
     end
   end
+
+  def test_pack_symbol_fails
+    assert_raises Mochilo::PackError do
+      Mochilo.pack(:symbol)
+    end
+  end
 end
