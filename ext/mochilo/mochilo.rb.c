@@ -37,8 +37,17 @@ static VALUE rb_mochilo__unpack(VALUE rb_buffer)
 	source.end = source.ptr + RSTRING_LEN(rb_buffer);
 
 	error = mochilo_unpack_one((mo_value)&rb_result, &source);
-	if (error < 0)
-		rb_raise(rb_eMochiloUnpackError, "unpack failed (%d)", error);
+	if (error < 0) {
+		switch (error) {
+			case MSGPACK_EEOF:
+				rb_raise(rb_eMochiloUnpackError, "more data needed");
+			case MSGPACK_EINVALID:
+				rb_raise(rb_eMochiloUnpackError, "invalid or corrupt data");
+			case MSGPACK_ENOTHING:
+			default:
+				rb_raise(rb_eMochiloUnpackError, "unpack failed");
+		}
+	}
 
 	return rb_result;
 }
