@@ -25,8 +25,6 @@ hash = Mochilo.unpack(packed)
 #=> {"key"=>"value"}
 ```
 
-MessagePack doesn't have a symbol type so `key` came back as a String.
-
 ## Supported Ruby Types
 
 The following Ruby types are supported. Meaning they will be deserialized into the same Ruby type they were before serialization.
