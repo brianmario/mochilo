@@ -159,14 +159,10 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			return unpack_hash(_value, (size_t)length, src);
 		}
 
-		case MSGPACK_T_SYM:
+		case MSGPACK_T_STR8:
 		{
 			uint8_t length;
 			const char *ptr;
-
-			if (!src->trusted) {
-				return MSGPACK_EUNSAFE;
-			}
 
 			SRC_ENSURE_AVAIL(src, 1);
 			mochilo_src_get8be(src, &length);
@@ -174,11 +170,58 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			if (!(ptr = mochilo_src_peek(src, length)))
 				return -1;
 
-			*_value = moapi_sym_new(ptr, length);
+			*_value = moapi_str_new(ptr, length, MSGPACK_ENC_UTF_8);
 			return 0;
 		}
 
 		case MSGPACK_T_STR16:
+		{
+			uint16_t length;
+			const char *ptr;
+
+			SRC_ENSURE_AVAIL(src, 2 + 1);
+			mochilo_src_get16be(src, &length);
+
+			if (!(ptr = mochilo_src_peek(src, length)))
+				return -1;
+
+			*_value = moapi_str_new(ptr, length, MSGPACK_ENC_UTF_8);
+			return 0;
+		}
+
+		case MSGPACK_T_STR32:
+		{
+			uint32_t length;
+			const char *ptr;
+
+			SRC_ENSURE_AVAIL(src, 4 + 1);
+			mochilo_src_get32be(src, &length);
+
+			if (!(ptr = mochilo_src_peek(src, length)))
+				return -1;
+
+			*_value = moapi_str_new(ptr, length, MSGPACK_ENC_UTF_8);
+			return 0;
+		}
+
+		case MSGPACK_T_ENC8:
+		{
+			uint8_t length;
+			uint8_t encoding;
+			const char *ptr;
+
+			SRC_ENSURE_AVAIL(src, 1 + 1);
+			mochilo_src_get8be(src, &length);
+			mochilo_src_get8be(src, &encoding);
+
+			if (!(ptr = mochilo_src_peek(src, length)))
+				return -1;
+
+			*_value = moapi_str_new(ptr, length, encoding);
+			return 0;
+		}
+
+		case MSGPACK_T_ENC16:
 		{
 			uint16_t length;
 			uint8_t encoding;
@@ -195,7 +238,7 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			return 0;
 		}
 
-		case MSGPACK_T_STR32:
+		case MSGPACK_T_ENC32:
 		{
 			uint32_t length;
 			uint8_t encoding;
@@ -212,7 +255,22 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			return 0;
 		}
 
-		case MSGPACK_T_RAW16:
+		case MSGPACK_T_BIN8:
+		{
+			uint8_t length;
+			const char *ptr;
+
+			SRC_ENSURE_AVAIL(src, 1);
+			mochilo_src_get8be(src, &length);
+
+			if (!(ptr = mochilo_src_peek(src, length)))
+				return -1;
+
+			*_value = moapi_bytes_new(ptr, length);
+			return 0;
+		}
+
+		case MSGPACK_T_BIN16:
 		{
 			uint16_t length;
 			const char *ptr;
@@ -227,7 +285,7 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			return 0;
 		}
 
-		case MSGPACK_T_RAW32:
+		case MSGPACK_T_BIN32:
 		{
 			uint32_t length;
 			const char *ptr;
@@ -266,7 +324,7 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 				if (!(ptr = mochilo_src_peek(src, length)))
 					return -1;
 
-				*_value = moapi_bytes_new(ptr, length);
+				*_value = moapi_str_new(ptr, length, MSGPACK_ENC_UTF_8);
 				return 0;
 			}
 

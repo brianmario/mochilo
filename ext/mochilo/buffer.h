@@ -48,7 +48,7 @@ static inline void swap64(const uint8_t *buffer, void *out)
 }
 
 /**
- * Buffer code 
+ * Buffer code
  */
 typedef struct {
 	char *ptr;
@@ -65,7 +65,6 @@ typedef struct {
 typedef struct {
 	const char *ptr;
 	const char *end;
-	int trusted;
 } mochilo_src;
 
 void mochilo_buf_init(mochilo_buf *buf);
@@ -83,7 +82,7 @@ const char *mochilo_src_peek(mochilo_src *buf, size_t need);
 	if (unlikely(chunk->ptr + (d) > chunk->end)) { \
 		if ((chunk = mochilo_buf_rechunk(b)) == NULL) return; };
 
-#define SRC_CHECK_AVAIL(src, bytes) (src->ptr + bytes <= src->end) 
+#define SRC_CHECK_AVAIL(src, bytes) (src->ptr + bytes <= src->end)
 
 #define SRC_ENSURE_AVAIL(src, bytes) \
 	if (unlikely(src->ptr + bytes > src->end)) \

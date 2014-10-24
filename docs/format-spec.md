@@ -1,46 +1,41 @@
-## String
+## Enc
 
-The String type is nearly identical to the Raw type from MessagePack but is specifically
-aimed at marking a set of bytes as text.
+The Enc type is nearly identical to the Str type from the MessagePack spec but has a flag for specifying an encoding other than UTF-8.
 
 ### Format Specification
 
-#### Symbol
+#### Enc8
 
-For storing symbol names as ASCII text up to (2^8)-1 bytes.
-Length is stored in unsigned 8-bit integer.
-
-```
-+--------+--------+----------
-|  0xd4  |XXXXXXXX|...N bytes
-+--------+--------+----------
-=> XXXXXXXX (=N) bytes of raw bytes.
-```
-
-#### String16
-
-For storing text up to (2^16)-1 bytes.
-Length is stored in unsigned 16-bit big-endian integer.
-Encoding is stored as an int8
+For serializing text up to (2^8)-1 bytes.
 
 ```
-+--------+--------+--------+--------+----------
-|  0xd8  |XXXXXXXX|XXXXXXXX|YYYYYYYY|...N bytes
-+--------+--------+--------+--------+----------
-=> XXXXXXXX_XXXXXXXX (=N) bytes of raw bytes.
-=> YYYYYYYY encoding flag
++--------+--------+--------+========+
+|  0xc7  |XXXXXXXX|  type  |  data  |
++--------+--------+--------+========+
+=> XXXXXXXX - a 8-bit unsigned integer which represents the legth of data.
+=> type - encoding flag, a signed 8-bit signed integer
 ```
 
-#### String32
+#### Enc16
 
-For storing text up to (2^32)-1 bytes.
-Length is stored in unsigned 32-bit big-endian integer.
-Encoding is stored as an int8
+For serializing text up to (2^16)-1 bytes.
 
 ```
-+--------+--------+--------+--------+--------+--------+----------
-|  0xd9  |XXXXXXXX|XXXXXXXX|XXXXXXXX|XXXXXXXX|YYYYYYYY|...N bytes
-+--------+--------+--------+--------+--------+--------+----------
-=> XXXXXXXX_XXXXXXXX_XXXXXXXX_XXXXXXXX (=N) bytes of raw bytes.
-=> YYYYYYYY encoding flag
++--------+--------+--------+--------+========+
+|  0xc8  |YYYYYYYY|YYYYYYYY|  type  |  data  |
++--------+--------+--------+--------+========+
+=> YYYYYYYY_YYYYYYYY - a 16-bit big-endian unsigned integer which represents the legth of data.
+=> type - encoding flag, a signed 8-bit signed integer
+```
+
+#### Enc32
+
+For serializing text up to (2^32)-1 bytes.
+
+```
++--------+--------+--------+--------+--------+--------+========+
+|  0xc9  |ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|  type  |  data  |
++--------+--------+--------+--------+--------+--------+========+
+=> ZZZZZZZZ_ZZZZZZZZ_ZZZZZZZZ_ZZZZZZZZ - a big-endian 32-bit unsigned integer which represents the legth of data.
+=> type - encoding flag, a signed 8-bit signed integer
 ```
