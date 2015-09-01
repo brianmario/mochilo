@@ -15,6 +15,7 @@ Gem::Specification.new do |s|
   s.summary = %q{A ruby library for BananaPack}
   s.test_files = `git ls-files spec`.split("\n")
   s.required_ruby_version = ">= 1.9.3"
+  s.licenses = ["MIT"]
 
   # tests
   s.add_development_dependency 'rake-compiler', ">= 0.8.1"
