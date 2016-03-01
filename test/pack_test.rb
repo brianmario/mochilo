@@ -165,11 +165,9 @@ class MochiloPackTest < MiniTest::Unit::TestCase
   end
 
   def test_pack_custom_type
-    val = "custom"
+    obj = CustomType.new("custom")
 
-    obj = CustomType.new(val)
-
-    assert_equal val, Mochilo.pack(obj)
+    assert_equal "\xA6custom", Mochilo.pack(obj)
   end
 
   def test_pack_unsupported_type
