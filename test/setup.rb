@@ -14,3 +14,12 @@ require 'minitest/autorun'
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 $LOAD_PATH.unshift File.expand_path('..', __FILE__)
 
+class CustomType
+  def initialize(str)
+    @str = str
+  end
+
+  def to_bpack
+    @str
+  end
+end
