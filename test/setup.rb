@@ -20,6 +20,6 @@ class CustomType
   end
 
   def to_bpack
-    @str
+    Mochilo.pack(@str)
   end
 end
