@@ -164,6 +164,14 @@ class MochiloPackTest < MiniTest::Unit::TestCase
     # TODO: not sure how to test this without making a massive 66k item hash
   end
 
+  def test_pack_custom_type
+    val = "custom"
+
+    obj = CustomType.new(val)
+
+    assert_equal val, Mochilo.pack(obj)
+  end
+
   def test_pack_unsupported_type
     assert_raises Mochilo::PackError do
       Mochilo.pack(Object.new)

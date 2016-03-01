@@ -269,9 +269,14 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted)
 		return;
 
 	default:
-		rb_raise(rb_eMochiloPackError,
-				"Unsupported object type: %s", rb_obj_classname(rb_object));
+		if (rb_respond_to(rb_object, rb_intern("to_bpack"))) {
+			VALUE bpack = rb_funcall(rb_object, rb_intern("to_bpack"), 0);
+
+			mochilo_buf_put(buf, RSTRING_PTR(bpack), RSTRING_LEN(bpack));
+		} else {
+			rb_raise(rb_eMochiloPackError,
+					"Unsupported object type: %s", rb_obj_classname(rb_object));
+		}
 		return;
 	}
 }
-
