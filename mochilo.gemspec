@@ -20,6 +20,4 @@ Gem::Specification.new do |s|
   # tests
   s.add_development_dependency 'rake-compiler', ">= 0.8.1"
   s.add_development_dependency 'minitest', ">= 4.1.0"
-  # benchmarks
-  s.add_development_dependency 'msgpack'
 end
