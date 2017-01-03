@@ -38,7 +38,7 @@ static void skip_last_chunk(mochilo_buf *buf)
 
 static void free_buf(mochilo_buf *buf)
 {
-	uint16_t i;
+	uint32_t i;
 
 	for (i = 0; i < buf->cur_chunk; ++i)
 		free(buf->chunks[i].ptr);
@@ -61,7 +61,7 @@ VALUE mochilo_buf_flush(mochilo_buf *buf)
 {
 	VALUE rb_str;
 	char *ptr;
-	uint16_t i;
+	uint32_t i;
 
 	skip_last_chunk(buf);
 

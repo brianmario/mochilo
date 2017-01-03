@@ -59,7 +59,7 @@ typedef struct {
 	mochilo_buf_chunk *chunks;
 	char *last_alloc;
 	size_t total_size;
-	uint16_t chunk_count, cur_chunk;
+	uint32_t chunk_count, cur_chunk;
 } mochilo_buf;
 
 typedef struct {
