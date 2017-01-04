@@ -10,6 +10,10 @@ require 'bundler/setup'
 # bring in minitest
 require 'minitest/autorun'
 
+if !defined?(MiniTest::Test)
+  MiniTest::Test = MiniTest::Unit::TestCase
+end
+
 # put lib and test dirs directly on load path
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 $LOAD_PATH.unshift File.expand_path('..', __FILE__)
