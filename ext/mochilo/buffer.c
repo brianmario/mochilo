@@ -19,7 +19,7 @@ static mochilo_buf_chunk *init_cur_chunk(mochilo_buf *buf, size_t chunk_size)
 
 	buf->last_alloc = chunk->ptr = malloc(chunk_size);
 	if (!chunk->ptr)
-		return NULL;
+		rb_raise(rb_eNoMemError, "Failed to allocate new chunk");
 
 	chunk->end = chunk->ptr + chunk_size;
 	return chunk;
@@ -38,7 +38,7 @@ static void skip_last_chunk(mochilo_buf *buf)
 
 static void free_buf(mochilo_buf *buf)
 {
-	uint16_t i;
+	uint32_t i;
 
 	for (i = 0; i < buf->cur_chunk; ++i)
 		free(buf->chunks[i].ptr);
@@ -61,7 +61,7 @@ VALUE mochilo_buf_flush(mochilo_buf *buf)
 {
 	VALUE rb_str;
 	char *ptr;
-	uint16_t i;
+	uint32_t i;
 
 	skip_last_chunk(buf);
 
@@ -95,15 +95,20 @@ VALUE mochilo_buf_flush(mochilo_buf *buf)
 
 mochilo_buf_chunk *mochilo_buf_rechunk2(mochilo_buf *buf, size_t chunk_size)
 {
+	mochilo_buf_chunk *chunks;
+
 	skip_last_chunk(buf);
 
 	if (buf->cur_chunk == buf->chunk_count) {
+		if ((buf->chunk_count * 2) < buf->chunk_count)
+			rb_raise(rb_eArgError, "Too many chunks required to serialize");
+
+		chunks = realloc(buf->chunks, buf->chunk_count * 2 * sizeof(mochilo_buf_chunk));
+		if (!chunks)
+			rb_raise(rb_eNoMemError, "Failed to realloc chunks");
+
+		buf->chunks = chunks;
 		buf->chunk_count *= 2;
-
-		buf->chunks = realloc(buf->chunks, buf->chunk_count * sizeof(mochilo_buf_chunk));
-		if (!buf->chunks)
-			return NULL;
-
 	}
 
 	return init_cur_chunk(buf, chunk_size);
@@ -118,10 +123,8 @@ void mochilo_buf_put(mochilo_buf *buf, const char *data, size_t len)
 {
 	mochilo_buf_chunk *chunk = &buf->chunks[buf->cur_chunk];
 
-	if (unlikely(chunk->ptr + len > chunk->end)) {
-		if (!(chunk = mochilo_buf_rechunk2(buf, len)))
-			return;
-	}
+	if (unlikely(chunk->ptr + len > chunk->end))
+		chunk = mochilo_buf_rechunk2(buf, len);
 
 	memmove(chunk->ptr, data, len);
 	chunk->ptr += len;

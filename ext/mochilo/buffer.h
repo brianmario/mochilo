@@ -59,7 +59,7 @@ typedef struct {
 	mochilo_buf_chunk *chunks;
 	char *last_alloc;
 	size_t total_size;
-	uint16_t chunk_count, cur_chunk;
+	uint32_t chunk_count, cur_chunk;
 } mochilo_buf;
 
 typedef struct {
@@ -81,7 +81,7 @@ const char *mochilo_src_peek(mochilo_src *buf, size_t need);
 #define BUF_ENSURE_AVAIL(b, d) \
 	mochilo_buf_chunk *chunk = &b->chunks[b->cur_chunk]; \
 	if (unlikely(chunk->ptr + (d) > chunk->end)) { \
-		if ((chunk = mochilo_buf_rechunk(b)) == NULL) return; };
+		chunk = mochilo_buf_rechunk(b); };
 
 #define SRC_CHECK_AVAIL(src, bytes) (src->ptr + bytes <= src->end) 
 
