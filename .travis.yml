@@ -1,6 +1,7 @@
 language: ruby
 script:
   - bundle exec rake test
+install: ./script/bootstrap
 rvm:
   - 2.3.0
   - 2.2
