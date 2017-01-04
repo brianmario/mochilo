@@ -100,7 +100,7 @@ mochilo_buf_chunk *mochilo_buf_rechunk2(mochilo_buf *buf, size_t chunk_size)
 	skip_last_chunk(buf);
 
 	if (buf->cur_chunk == buf->chunk_count) {
-		if (!(buf->chunk_count * 2))
+		if ((buf->chunk_count * 2) < buf->chunk_count)
 			rb_raise(rb_eArgError, "Too many chunks required to serialize");
 
 		chunks = realloc(buf->chunks, buf->chunk_count * 2 * sizeof(mochilo_buf_chunk));
