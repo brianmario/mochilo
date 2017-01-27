@@ -18,3 +18,12 @@ end
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 $LOAD_PATH.unshift File.expand_path('..', __FILE__)
 
+class CustomType
+  def initialize(str)
+    @str = str
+  end
+
+  def to_bpack
+    Mochilo.pack(@str)
+  end
+end

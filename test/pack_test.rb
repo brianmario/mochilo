@@ -270,6 +270,12 @@ class MochiloPackTest < Minitest::Test
     # assert_equal expected, Mochilo.pack(hash)
   end
 
+  def test_pack_custom_type
+    obj = CustomType.new("custom")
+
+    assert_equal "\xA6custom", Mochilo.pack(obj)
+  end
+
   def test_pack_unsupported_type
     assert_raises Mochilo::PackError do
       Mochilo.pack(Object.new)
