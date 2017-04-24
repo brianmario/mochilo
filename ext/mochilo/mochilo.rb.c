@@ -22,8 +22,9 @@ static VALUE rb_mMochilo;
 static VALUE rb_eMochiloError;
 VALUE rb_eMochiloPackError;
 VALUE rb_eMochiloUnpackError;
+ID s_call;
 
-extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
+extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, VALUE rb_opts);
 
 static VALUE rb_mochilo__unpack(VALUE rb_buffer)
 {
@@ -68,15 +69,19 @@ static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
  *
  * call-seq:
  *     Mochilo.pack(obj) -> String
+ *     Mochilo.pack(obj, custom_type_config) -> String
  *
  * Packs a Ruby object into BananaPack format.
  */
-static VALUE rb_mochilo_pack(VALUE self, VALUE rb_obj)
+static VALUE rb_mochilo_pack(int argc, VALUE *argv, VALUE self)
 {
+	VALUE rb_obj, rb_opts;
 	mochilo_buf buf;
 
+	rb_scan_args(argc, argv, "11", &rb_obj, &rb_opts);
+
 	mochilo_buf_init(&buf);
-	mochilo_pack_one(&buf, rb_obj);
+	mochilo_pack_one(&buf, rb_obj, rb_opts);
 	return mochilo_buf_flush(&buf);
 }
 
@@ -84,9 +89,11 @@ void Init_mochilo()
 {
 	rb_mMochilo = rb_define_module("Mochilo");
 	rb_define_method(rb_mMochilo, "unpack", rb_mochilo_unpack, 1);
-	rb_define_method(rb_mMochilo, "pack", rb_mochilo_pack, 1);
+	rb_define_method(rb_mMochilo, "pack", rb_mochilo_pack, -1);
 
 	rb_eMochiloError = rb_define_class_under(rb_mMochilo, "Error", rb_eStandardError);
 	rb_eMochiloPackError = rb_define_class_under(rb_mMochilo, "PackError", rb_eMochiloError);
 	rb_eMochiloUnpackError = rb_define_class_under(rb_mMochilo, "UnpackError", rb_eMochiloError);
+
+	s_call = rb_intern("call");
 }

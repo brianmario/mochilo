@@ -6,8 +6,9 @@
 #include "mochilo.h"
 
 extern VALUE rb_eMochiloPackError;
+extern ID s_call;
 
-void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
+void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, VALUE rb_opts);
 
 void mochilo_pack_fixnum(mochilo_buf *buf, VALUE rb_fixnum)
 {
@@ -75,13 +76,14 @@ void mochilo_pack_bignum(mochilo_buf *buf, VALUE rb_bignum)
 
 struct mochilo_hash_pack {
 	mochilo_buf *buf;
+	VALUE rb_opts;
 };
 
 static int hash_callback(VALUE key, VALUE val, VALUE opaque)
 {
 	struct mochilo_hash_pack *hash_pack = (struct mochilo_hash_pack*)opaque;
-	mochilo_pack_one(hash_pack->buf, key);
-	mochilo_pack_one(hash_pack->buf, val);
+	mochilo_pack_one(hash_pack->buf, key, hash_pack->rb_opts);
+	mochilo_pack_one(hash_pack->buf, val, hash_pack->rb_opts);
 	return 0;
 }
 
@@ -92,12 +94,13 @@ void mochilo_pack_double(mochilo_buf *buf, VALUE rb_double)
 	mochilo_buf_put64be(buf, &d);
 }
 
-void mochilo_pack_hash(mochilo_buf *buf, VALUE rb_hash)
+void mochilo_pack_hash(mochilo_buf *buf, VALUE rb_hash, VALUE rb_opts)
 {
 	struct mochilo_hash_pack hash_pack;
 	long size = RHASH_SIZE(rb_hash);
 
 	hash_pack.buf = buf;
+	hash_pack.rb_opts = rb_opts;
 
 	if (size < 0x10) {
 		uint8_t lead = 0x80 | size;
@@ -142,6 +145,26 @@ void mochilo_pack_bytes(mochilo_buf *buf, VALUE rb_bytes)
 	mochilo_buf_put(buf, RSTRING_PTR(rb_bytes), size);
 }
 
+static void mochilo_put_ext_size(mochilo_buf *buf, long size)
+{
+	if (size < 0x100) {
+		uint8_t lead = size;
+		mochilo_buf_putc(buf, MSGPACK_T_ENC8);
+		mochilo_buf_putc(buf, lead);
+	} else if (size < 0x10000) {
+		uint16_t lead = size;
+		mochilo_buf_putc(buf, MSGPACK_T_ENC16);
+		mochilo_buf_put16be(buf, &lead);
+	} else if (size < 0x100000000) {
+		mochilo_buf_putc(buf, MSGPACK_T_ENC32);
+		mochilo_buf_put32be(buf, &size);
+	} else {
+		// there is no ext 64
+		rb_raise(rb_eMochiloPackError,
+			"String cannot be larger than %ld bytes", 0x100000000);
+	}
+}
+
 void mochilo_pack_str(mochilo_buf *buf, VALUE rb_str)
 {
 	long size = RSTRING_LEN(rb_str);
@@ -176,22 +199,7 @@ void mochilo_pack_str(mochilo_buf *buf, VALUE rb_str)
 		}
 	} else {
 		// if another encoding is used we need to use our custom types
-		if (size < 0x100) {
-			uint8_t lead = size;
-			mochilo_buf_putc(buf, MSGPACK_T_ENC8);
-			mochilo_buf_putc(buf, lead);
-		} else if (size < 0x10000) {
-			uint16_t lead = size;
-			mochilo_buf_putc(buf, MSGPACK_T_ENC16);
-			mochilo_buf_put16be(buf, &lead);
-		} else if (size < 0x100000000) {
-			mochilo_buf_putc(buf, MSGPACK_T_ENC32);
-			mochilo_buf_put32be(buf, &size);
-		} else {
-			// there is no ext 64
-			rb_raise(rb_eMochiloPackError,
-				"String cannot be larger than %ld bytes", 0x100000000);
-		}
+		mochilo_put_ext_size(buf, size);
 
 		enc2id = mochilo_encoding_to_id(enc_name, (unsigned int)strlen(enc_name));
 		mochilo_buf_putc(buf, enc2id ? enc2id->id : 0);
@@ -200,7 +208,7 @@ void mochilo_pack_str(mochilo_buf *buf, VALUE rb_str)
 	mochilo_buf_put(buf, RSTRING_PTR(rb_str), size);
 }
 
-void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array)
+void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array, VALUE rb_opts)
 {
 	long i, size = RARRAY_LEN(rb_array);
 
@@ -221,11 +229,42 @@ void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array)
 	}
 
 	for (i = 0; i < size; i++) {
-		mochilo_pack_one(buf, rb_ary_entry(rb_array, i));
+		mochilo_pack_one(buf, rb_ary_entry(rb_array, i), rb_opts);
 	}
 }
 
-void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
+static int mochilo_pack_custom(mochilo_buf *buf, VALUE rb_object, VALUE rb_opts)
+{
+	VALUE lookup_class, custom, type_num, proc, encoded;
+	long size;
+
+	if (NIL_P(rb_opts))
+		return 0;
+
+	lookup_class = rb_obj_class(rb_object);
+	custom = rb_hash_aref(rb_opts, lookup_class);
+	if (NIL_P(custom))
+		return 0;
+	if (RARRAY_LEN(custom) != 2) {
+		rb_raise(rb_eArgError, "Custom serializer must have a type (int) and a proc");
+		return 0;
+	}
+
+	type_num = rb_ary_entry(custom, 0);
+	proc = rb_ary_entry(custom, 1);
+
+	encoded = rb_funcall(proc, s_call, 1, rb_object);
+	size = RSTRING_LEN(encoded);
+
+	mochilo_put_ext_size(buf, size + 1);
+	mochilo_buf_putc(buf, 0xff); /* mark this as a custom type, not an encoded string */
+	mochilo_buf_putc(buf, NUM2INT(type_num));
+	mochilo_buf_put(buf, RSTRING_PTR(encoded), size);
+
+	return 1;
+}
+
+void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, VALUE rb_opts)
 {
 	switch (rb_type(rb_object)) {
 	case T_NIL:
@@ -252,11 +291,11 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 		return;
 
 	case T_HASH:
-		mochilo_pack_hash(buf, rb_object);
+		mochilo_pack_hash(buf, rb_object, rb_opts);
 		return;
 
 	case T_ARRAY:
-		mochilo_pack_array(buf, rb_object);
+		mochilo_pack_array(buf, rb_object, rb_opts);
 		return;
 
 	case T_FLOAT:
@@ -268,8 +307,10 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 		return;
 
 	default:
-		rb_raise(rb_eMochiloPackError,
-				"Unsupported object type: %s", rb_obj_classname(rb_object));
+		if (!mochilo_pack_custom(buf, rb_object, rb_opts)) {
+			rb_raise(rb_eMochiloPackError,
+					"Unsupported object type: %s", rb_obj_classname(rb_object));
+		}
 		return;
 	}
 }
