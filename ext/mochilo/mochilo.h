@@ -151,7 +151,7 @@ enum msgpack_err_t {
 
 typedef void * mo_value;
 typedef uint64_t mo_integer;
-int mochilo_unpack_one(mo_value *_value, mochilo_src *src);
+int mochilo_unpack_one(mo_value *_value, mochilo_src *src, VALUE rb_opts);
 
 #include <ruby/encoding.h>
 #include "encodings.h"

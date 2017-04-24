@@ -26,7 +26,7 @@ ID s_call;
 
 extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, VALUE rb_opts);
 
-static VALUE rb_mochilo__unpack(VALUE rb_buffer)
+static VALUE rb_mochilo__unpack(VALUE rb_buffer, VALUE rb_opts)
 {
 	VALUE rb_result;
 	int error = -1;
@@ -37,7 +37,7 @@ static VALUE rb_mochilo__unpack(VALUE rb_buffer)
 	source.ptr = RSTRING_PTR(rb_buffer);
 	source.end = source.ptr + RSTRING_LEN(rb_buffer);
 
-	error = mochilo_unpack_one((mo_value)&rb_result, &source);
+	error = mochilo_unpack_one((mo_value)&rb_result, &source, rb_opts);
 	if (error < 0) {
 		switch (error) {
 			case MSGPACK_EEOF:
@@ -57,12 +57,15 @@ static VALUE rb_mochilo__unpack(VALUE rb_buffer)
  *
  * call-seq:
  *     Mochilo.unpack(banana_pack_str) -> Object
+ *     Mochilo.unpack(banana_pack_str, custom_type_config) -> Object
  *
  * Unpacks a BananaPack stream into a Ruby object.
  */
-static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
+static VALUE rb_mochilo_unpack(int argc, VALUE *argv, VALUE self)
 {
-	return rb_mochilo__unpack(rb_buffer);
+	VALUE rb_buffer, rb_opts;
+	rb_scan_args(argc, argv, "11", &rb_buffer, &rb_opts);
+	return rb_mochilo__unpack(rb_buffer, rb_opts);
 }
 
 /* Document-method: pack
@@ -88,7 +91,7 @@ static VALUE rb_mochilo_pack(int argc, VALUE *argv, VALUE self)
 void Init_mochilo()
 {
 	rb_mMochilo = rb_define_module("Mochilo");
-	rb_define_method(rb_mMochilo, "unpack", rb_mochilo_unpack, 1);
+	rb_define_method(rb_mMochilo, "unpack", rb_mochilo_unpack, -1);
 	rb_define_method(rb_mMochilo, "pack", rb_mochilo_pack, -1);
 
 	rb_eMochiloError = rb_define_class_under(rb_mMochilo, "Error", rb_eStandardError);
