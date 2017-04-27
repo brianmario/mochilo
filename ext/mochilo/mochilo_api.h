@@ -1,3 +1,4 @@
+extern ID s_call;
 
 MOAPI mo_value moapi_bytes_new(const char *src, size_t len)
 {
@@ -16,6 +17,17 @@ MOAPI mo_value moapi_str_new(const char *src, size_t len, enum msgpack_enc_t enc
 	rb_enc_set_index(str, index);
 
 	return (mo_value)str;
+}
+
+MOAPI mo_value moapi_custom_new(const char *src, size_t len, VALUE rb_opts)
+{
+	VALUE decoder, result;
+	decoder = rb_hash_aref(rb_opts, INT2NUM(*src));
+	result = rb_str_new(src + 1, len - 1);
+	if (!NIL_P(decoder)) {
+		result = rb_funcall(decoder, s_call, 1, result);
+	}
+	return (mo_value)result;
 }
 
 MOAPI mo_value moapi_array_new(size_t array_size)

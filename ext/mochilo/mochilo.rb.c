@@ -22,10 +22,11 @@ static VALUE rb_mMochilo;
 static VALUE rb_eMochiloError;
 VALUE rb_eMochiloPackError;
 VALUE rb_eMochiloUnpackError;
+ID s_call;
 
-extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
+extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, VALUE rb_opts);
 
-static VALUE rb_mochilo__unpack(VALUE rb_buffer)
+static VALUE rb_mochilo__unpack(VALUE rb_buffer, VALUE rb_opts)
 {
 	VALUE rb_result;
 	int error = -1;
@@ -36,7 +37,7 @@ static VALUE rb_mochilo__unpack(VALUE rb_buffer)
 	source.ptr = RSTRING_PTR(rb_buffer);
 	source.end = source.ptr + RSTRING_LEN(rb_buffer);
 
-	error = mochilo_unpack_one((mo_value)&rb_result, &source);
+	error = mochilo_unpack_one((mo_value)&rb_result, &source, rb_opts);
 	if (error < 0) {
 		switch (error) {
 			case MSGPACK_EEOF:
@@ -56,37 +57,46 @@ static VALUE rb_mochilo__unpack(VALUE rb_buffer)
  *
  * call-seq:
  *     Mochilo.unpack(banana_pack_str) -> Object
+ *     Mochilo.unpack(banana_pack_str, custom_type_config) -> Object
  *
  * Unpacks a BananaPack stream into a Ruby object.
  */
-static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
+static VALUE rb_mochilo_unpack(int argc, VALUE *argv, VALUE self)
 {
-	return rb_mochilo__unpack(rb_buffer);
+	VALUE rb_buffer, rb_opts;
+	rb_scan_args(argc, argv, "11", &rb_buffer, &rb_opts);
+	return rb_mochilo__unpack(rb_buffer, rb_opts);
 }
 
 /* Document-method: pack
  *
  * call-seq:
  *     Mochilo.pack(obj) -> String
+ *     Mochilo.pack(obj, custom_type_config) -> String
  *
  * Packs a Ruby object into BananaPack format.
  */
-static VALUE rb_mochilo_pack(VALUE self, VALUE rb_obj)
+static VALUE rb_mochilo_pack(int argc, VALUE *argv, VALUE self)
 {
+	VALUE rb_obj, rb_opts;
 	mochilo_buf buf;
 
+	rb_scan_args(argc, argv, "11", &rb_obj, &rb_opts);
+
 	mochilo_buf_init(&buf);
-	mochilo_pack_one(&buf, rb_obj);
+	mochilo_pack_one(&buf, rb_obj, rb_opts);
 	return mochilo_buf_flush(&buf);
 }
 
 void Init_mochilo()
 {
 	rb_mMochilo = rb_define_module("Mochilo");
-	rb_define_method(rb_mMochilo, "unpack", rb_mochilo_unpack, 1);
-	rb_define_method(rb_mMochilo, "pack", rb_mochilo_pack, 1);
+	rb_define_method(rb_mMochilo, "unpack", rb_mochilo_unpack, -1);
+	rb_define_method(rb_mMochilo, "pack", rb_mochilo_pack, -1);
 
 	rb_eMochiloError = rb_define_class_under(rb_mMochilo, "Error", rb_eStandardError);
 	rb_eMochiloPackError = rb_define_class_under(rb_mMochilo, "PackError", rb_eMochiloError);
 	rb_eMochiloUnpackError = rb_define_class_under(rb_mMochilo, "UnpackError", rb_eMochiloError);
+
+	s_call = rb_intern("call");
 }

@@ -6,7 +6,7 @@
 #include "mochilo.h"
 #include "mochilo_api.h"
 
-static inline int unpack_array(mo_value *_array, size_t elements, mochilo_src *buf)
+static inline int unpack_array(mo_value *_array, size_t elements, mochilo_src *buf, VALUE rb_opts)
 {
 	size_t i;
 	int error;
@@ -16,7 +16,7 @@ static inline int unpack_array(mo_value *_array, size_t elements, mochilo_src *b
 	for (i = 0; i < elements; ++i) {
 		mo_value element;
 
-		if ((error = mochilo_unpack_one(&element, buf)) < 0)
+		if ((error = mochilo_unpack_one(&element, buf, rb_opts)) < 0)
 			return error;
 
 		moapi_array_append(array, element);
@@ -26,7 +26,7 @@ static inline int unpack_array(mo_value *_array, size_t elements, mochilo_src *b
 	return 0;
 }
 
-static inline int unpack_hash(mo_value *_hash, size_t elements, mochilo_src *buf)
+static inline int unpack_hash(mo_value *_hash, size_t elements, mochilo_src *buf, VALUE rb_opts)
 {
 	size_t i;
 	int error;
@@ -36,10 +36,10 @@ static inline int unpack_hash(mo_value *_hash, size_t elements, mochilo_src *buf
 	for (i = 0; i < elements; ++i) {
 		mo_value key, value;
 
-		if ((error = mochilo_unpack_one(&key, buf)) < 0)
+		if ((error = mochilo_unpack_one(&key, buf, rb_opts)) < 0)
 			return error;
 
-		if ((error = mochilo_unpack_one(&value, buf)) < 0)
+		if ((error = mochilo_unpack_one(&value, buf, rb_opts)) < 0)
 			return error;
 
 		moapi_hash_set(hash, key, value);
@@ -57,7 +57,19 @@ static inline int unpack_hash(mo_value *_hash, size_t elements, mochilo_src *buf
 	return 0; \
 }
 
-int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
+#define UNPACK_CUSTOM(_value, src, rb_opts, length, encoding) { \
+	const char *ptr; \
+	if (encoding == 0xff) { \
+		*_value = moapi_custom_new(mochilo_src_peek(src, length), length, rb_opts); \
+	} else { \
+		if (!(ptr = mochilo_src_peek(src, length))) \
+			return -1; \
+		*_value = moapi_str_new(ptr, length, encoding); \
+	} \
+	return 0; \
+}
+
+int mochilo_unpack_one(mo_value *_value, mochilo_src *src, VALUE rb_opts)
 {
 	uint8_t leader;
 
@@ -126,7 +138,7 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			SRC_ENSURE_AVAIL(src, 2);
 			mochilo_src_get16be(src, &length);
 
-			return unpack_array(_value, (size_t)length, src);
+			return unpack_array(_value, (size_t)length, src, rb_opts);
 		}
 
 		case MSGPACK_T_ARRAY32:
@@ -136,7 +148,7 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			SRC_ENSURE_AVAIL(src, 4);
 			mochilo_src_get32be(src, &length);
 
-			return unpack_array(_value, (size_t)length, src);
+			return unpack_array(_value, (size_t)length, src, rb_opts);
 		}
 
 		case MSGPACK_T_MAP16:
@@ -146,7 +158,7 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			SRC_ENSURE_AVAIL(src, 2);
 			mochilo_src_get16be(src, &length);
 
-			return unpack_hash(_value, (size_t)length, src);
+			return unpack_hash(_value, (size_t)length, src, rb_opts);
 		}
 
 		case MSGPACK_T_MAP32:
@@ -156,7 +168,7 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			SRC_ENSURE_AVAIL(src, 4);
 			mochilo_src_get32be(src, &length);
 
-			return unpack_hash(_value, (size_t)length, src);
+			return unpack_hash(_value, (size_t)length, src, rb_opts);
 		}
 
 		case MSGPACK_T_STR8:
@@ -208,51 +220,36 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 		{
 			uint8_t length;
 			uint8_t encoding;
-			const char *ptr;
 
 			SRC_ENSURE_AVAIL(src, 1 + 1);
 			mochilo_src_get8be(src, &length);
 			mochilo_src_get8be(src, &encoding);
 
-			if (!(ptr = mochilo_src_peek(src, length)))
-				return -1;
-
-			*_value = moapi_str_new(ptr, length, encoding);
-			return 0;
+			UNPACK_CUSTOM(_value, src, rb_opts, length, encoding);
 		}
 
 		case MSGPACK_T_ENC16:
 		{
 			uint16_t length;
 			uint8_t encoding;
-			const char *ptr;
 
 			SRC_ENSURE_AVAIL(src, 2 + 1);
 			mochilo_src_get16be(src, &length);
 			mochilo_src_get8be(src, &encoding);
 
-			if (!(ptr = mochilo_src_peek(src, length)))
-				return -1;
-
-			*_value = moapi_str_new(ptr, length, encoding);
-			return 0;
+			UNPACK_CUSTOM(_value, src, rb_opts, length, encoding);
 		}
 
 		case MSGPACK_T_ENC32:
 		{
 			uint32_t length;
 			uint8_t encoding;
-			const char *ptr;
 
 			SRC_ENSURE_AVAIL(src, 4 + 1);
 			mochilo_src_get32be(src, &length);
 			mochilo_src_get8be(src, &encoding);
 
-			if (!(ptr = mochilo_src_peek(src, length)))
-				return -1;
-
-			*_value = moapi_str_new(ptr, length, encoding);
-			return 0;
+			UNPACK_CUSTOM(_value, src, rb_opts, length, encoding);
 		}
 
 		case MSGPACK_T_BIN8:
@@ -309,12 +306,12 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 
 			else if (leader < 0x90) {
 				uint8_t length = leader & (~0x80);
-				return unpack_hash(_value, length, src);
+				return unpack_hash(_value, length, src, rb_opts);
 			}
 
 			else if (leader < 0xa0) {
 				uint8_t length = leader & (~0x90);
-				return unpack_array(_value, length, src);
+				return unpack_array(_value, length, src, rb_opts);
 			}
 
 			else if (leader < 0xc0) {

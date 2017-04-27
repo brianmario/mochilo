@@ -281,4 +281,15 @@ class MochiloPackTest < Minitest::Test
       Mochilo.pack(:symbol)
     end
   end
+
+  def test_pack_symbol_with_custom_type
+    expected = "\xC7\x07\xFF\x00symbol"
+    assert_equal expected, Mochilo.pack(:symbol, ::Symbol => [0x00, lambda { |sym| sym.to_s }])
+  end
+
+  def test_pack_symbol_with_custom_type_roundtrips
+    packed = Mochilo.pack(:symbol, ::Symbol => [0x00, lambda { |sym| sym.to_s }])
+    unpacked = Mochilo.unpack(packed, 0x00 => lambda { |raw| raw.to_sym })
+    assert_equal :symbol, unpacked
+  end
 end
