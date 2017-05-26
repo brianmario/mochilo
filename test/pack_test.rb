@@ -276,9 +276,27 @@ class MochiloPackTest < Minitest::Test
     end
   end
 
-  def test_pack_symbol_fails
-    assert_raises Mochilo::PackError do
-      Mochilo.pack(:symbol)
+  def test_pack_symbol
+    expected = "\xC7\x07\xFF\x00symbol"
+    assert_equal expected, Mochilo.pack(:symbol)
+    assert_equal :symbol, Mochilo.unpack(expected)
+  end
+
+  def test_pack_regexp
+    expected = "\xC7\x07\xFF\x01\x00pa.tern"
+    assert_equal expected, Mochilo.pack(/pa.tern/)
+    [
+      /pa.tern/,
+      /thing/im,
+    ].each do |re|
+      assert_equal re, Mochilo.unpack(Mochilo.pack(re))
     end
+  end
+
+  def test_time
+    t = Time.at(1234567890.22)
+    expected = "\xC7\x07\xFF\x02nfi"
+    assert_equal expected, Mochilo.pack(t)
+    assert_equal t, Mochilo.unpack(expected)
   end
 end
