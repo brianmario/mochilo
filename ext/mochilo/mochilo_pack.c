@@ -108,9 +108,8 @@ void mochilo_pack_symbol(mochilo_buf *buf, VALUE rb_symbol)
 	symbol_name = rb_id2name(SYM2ID(rb_symbol));
 	size = strlen(symbol_name);
 
-	mochilo_put_ext_size_and_type(buf, size + 1, MOCHILO_T_SYMBOL);
+	mochilo_put_ext_size_and_type(buf, size, MOCHILO_T_SYMBOL);
 	mochilo_buf_put(buf, symbol_name, size);
-	mochilo_buf_putc(buf, '\0'); // null-terminate, to avoid an allocation on unpack
 }
 
 void mochilo_pack_regexp(mochilo_buf *buf, VALUE rb_regexp)

@@ -316,18 +316,9 @@ class MochiloUnpackTest < Minitest::Test
   end
 
   def test_unpack_custom_types_with_errors
-    # symbol missing the NUL terminator
-    assert_raises Mochilo::UnpackError do
-      Mochilo.unpack("\xC7\x08\xFF\x00symbol\x01")
-    end
-    assert_raises Mochilo::UnpackError do
-      Mochilo.unpack("\xC7\x07\xFF\x00symbol")
-    end
-
-    # regexp missing the last char
-    assert_raises Mochilo::UnpackError do
-      Mochilo.unpack("\xC7\x0D\xFF\x01\x00\x00\x00\x00\x01pa.ter")
-    end
+    # regexp has all the options bits
+    re = Mochilo.unpack("\xC7\x0D\xFF\x01\xFF\xFF\xFF\xFF\x01pa.tern")
+    refute_equal 0, re.options, "unpacked regexp options"
 
     # time is missing the last char
     assert_raises Mochilo::UnpackError do
@@ -336,12 +327,28 @@ class MochiloUnpackTest < Minitest::Test
 
     # time overflows
     assert_raises RangeError do
+      # set the top bit of the time.....v ...and of usec................v
       Mochilo.unpack("\xC7\x11\xFF\x02\x80\x00\x00\x00\x88\x77\x66\x55\x80\x00\x00\x00\x00\x0E\xDC\xBA")
     end
 
     # unknown field
     assert_raises Mochilo::UnpackError do
       Mochilo.unpack("\xC7\x07\xFF\x10unknowncustomtype")
+    end
+  end
+
+  # Make sure that the custom parsers never read past the end
+  # of their buffers.
+  def test_unpack_custom_types_with_missing_char
+    assert_error_on_truncated_unpack "\xC7\x07\xFF\x00symbol"
+    assert_error_on_truncated_unpack "\xC7\x0D\xFF\x01\x00\x00\x00\x00\x01pa.tern"
+    assert_error_on_truncated_unpack "\xC7\x11\xFF\x02\x00\x00\x00\x00\x88\x77\x66\x55\x00\x00\x00\x00\x00\x0E\xDC\xBA"
+  end
+
+  def assert_error_on_truncated_unpack(packed)
+    refute_nil Mochilo.unpack(packed)
+    assert_raises Mochilo::UnpackError do
+      Mochilo.unpack(packed.chop)
     end
   end
 end

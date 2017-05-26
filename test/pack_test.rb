@@ -277,7 +277,7 @@ class MochiloPackTest < Minitest::Test
   end
 
   def test_pack_symbol
-    expected = "\xC7\x08\xFF\x00symbol\x00"
+    expected = "\xC7\x07\xFF\x00symbol"
     assert_equal expected, Mochilo.pack(:symbol)
     assert_equal :symbol, Mochilo.unpack(expected)
   end

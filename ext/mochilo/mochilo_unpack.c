@@ -76,8 +76,6 @@ static int mochilo_unpack_custom(mo_value *_value, mochilo_src *src, size_t leng
 			const char *ptr;
 			if (!(ptr = mochilo_src_peek(src, length)))
 				return -1;
-			if (ptr[length-1] != '\0')
-				return -1;
 			*_value = moapi_symbol_new(ptr, length);
 			return 0;
 		}
