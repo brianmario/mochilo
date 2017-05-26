@@ -57,6 +57,21 @@ static inline int unpack_hash(mo_value *_hash, size_t elements, mochilo_src *buf
 	return 0; \
 }
 
+extern VALUE rb_eMochiloPackError;
+static int mochilo_unpack_custom(mo_value *_value, const char *encoded, size_t length)
+{
+	char custom_type = *encoded++;
+	switch (custom_type) {
+		case MOCHILO_T_SYMBOL:
+			*_value = moapi_symbol_new(encoded, length);
+			return 0;
+
+		default:
+			rb_raise(rb_eMochiloPackError, "unrecognized custom type %d\n", custom_type);
+			return -1;
+	}
+}
+
 int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 {
 	uint8_t leader;
@@ -217,6 +232,9 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			if (!(ptr = mochilo_src_peek(src, length)))
 				return -1;
 
+			if (encoding == MOCHILO_EXT_TYPE)
+				return mochilo_unpack_custom(_value, ptr, length);
+
 			*_value = moapi_str_new(ptr, length, encoding);
 			return 0;
 		}
@@ -234,6 +252,9 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			if (!(ptr = mochilo_src_peek(src, length)))
 				return -1;
 
+			if (encoding == MOCHILO_EXT_TYPE)
+				return mochilo_unpack_custom(_value, ptr, length);
+
 			*_value = moapi_str_new(ptr, length, encoding);
 			return 0;
 		}
@@ -250,6 +271,9 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 
 			if (!(ptr = mochilo_src_peek(src, length)))
 				return -1;
+
+			if (encoding == MOCHILO_EXT_TYPE)
+				return mochilo_unpack_custom(_value, ptr, length);
 
 			*_value = moapi_str_new(ptr, length, encoding);
 			return 0;

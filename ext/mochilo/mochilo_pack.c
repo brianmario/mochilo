@@ -9,6 +9,26 @@ extern VALUE rb_eMochiloPackError;
 
 void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
 
+static void mochilo_buf_put_ext_size(mochilo_buf *buf, long size)
+{
+	if (size < 0x100) {
+		uint8_t lead = size;
+		mochilo_buf_putc(buf, MSGPACK_T_ENC8);
+		mochilo_buf_putc(buf, lead);
+	} else if (size < 0x10000) {
+		uint16_t lead = size;
+		mochilo_buf_putc(buf, MSGPACK_T_ENC16);
+		mochilo_buf_put16be(buf, &lead);
+	} else if (size < 0x100000000) {
+		mochilo_buf_putc(buf, MSGPACK_T_ENC32);
+		mochilo_buf_put32be(buf, &size);
+	} else {
+		// there is no ext 64
+		rb_raise(rb_eMochiloPackError,
+			"String cannot be larger than %ld bytes", 0x100000000);
+	}
+}
+
 void mochilo_pack_fixnum(mochilo_buf *buf, VALUE rb_fixnum)
 {
 	long fixnum = NUM2LONG(rb_fixnum);
@@ -75,7 +95,16 @@ void mochilo_pack_bignum(mochilo_buf *buf, VALUE rb_bignum)
 
 void mochilo_pack_symbol(mochilo_buf *buf, VALUE rb_symbol)
 {
-	rb_raise(rb_eMochiloPackError, "todo: symbol");
+	char *symbol_name;
+	size_t size;
+
+	symbol_name = rb_id2name(SYM2ID(rb_symbol));
+	size = strlen(symbol_name);
+
+	mochilo_buf_put_ext_size(buf, size + 1);
+	mochilo_buf_putc(buf, MOCHILO_EXT_TYPE);
+	mochilo_buf_putc(buf, MOCHILO_T_SYMBOL);
+	mochilo_buf_put(buf, symbol_name, size);
 }
 
 void mochilo_pack_regexp(mochilo_buf *buf, VALUE rb_regexp)
@@ -191,23 +220,7 @@ void mochilo_pack_str(mochilo_buf *buf, VALUE rb_str)
 		}
 	} else {
 		// if another encoding is used we need to use our custom types
-		if (size < 0x100) {
-			uint8_t lead = size;
-			mochilo_buf_putc(buf, MSGPACK_T_ENC8);
-			mochilo_buf_putc(buf, lead);
-		} else if (size < 0x10000) {
-			uint16_t lead = size;
-			mochilo_buf_putc(buf, MSGPACK_T_ENC16);
-			mochilo_buf_put16be(buf, &lead);
-		} else if (size < 0x100000000) {
-			mochilo_buf_putc(buf, MSGPACK_T_ENC32);
-			mochilo_buf_put32be(buf, &size);
-		} else {
-			// there is no ext 64
-			rb_raise(rb_eMochiloPackError,
-				"String cannot be larger than %ld bytes", 0x100000000);
-		}
-
+		mochilo_buf_put_ext_size(buf, size);
 		enc2id = mochilo_encoding_to_id(enc_name, (unsigned int)strlen(enc_name));
 		mochilo_buf_putc(buf, enc2id ? enc2id->id : 0);
 	}
