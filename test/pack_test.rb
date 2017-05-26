@@ -175,4 +175,24 @@ class MochiloPackTest < MiniTest::Unit::TestCase
       Mochilo.pack(Object.new)
     end
   end
+
+  def test_pack_regexp
+    expected = "\xD5\x0C\x00\x00\x00\x00\x01pa.tern"
+    assert_equal expected, Mochilo.pack(/pa.tern/)
+    [
+      /pa.tern/,
+      /thing/im,
+    ].each do |re|
+      assert_equal re, Mochilo.unpack(Mochilo.pack(re))
+    end
+  end
+
+  def test_time
+    t = Time.gm(2042, 7, 21, 3, 32, 37, 974010)
+    expected = "\xD6" +
+      "\x00\x00\x00\x00\x88\x77\x66\x55" + # sec
+      "\x00\x00\x00\x00\x00\x0E\xDC\xBA"   # usec
+    assert_equal expected, Mochilo.pack(t)
+    assert_equal t, Mochilo.unpack(expected)
+  end
 end
