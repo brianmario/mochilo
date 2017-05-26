@@ -100,8 +100,22 @@ static int mochilo_unpack_custom(mo_value *_value, mochilo_src *src, size_t leng
 			return 0;
 		}
 
+		case MOCHILO_T_TIME:
+		{
+			uint64_t sec;
+			uint64_t usec;
+
+			if (length != 16)
+				return -1;
+
+			mochilo_src_get64be(src, &sec);
+			mochilo_src_get64be(src, &usec);
+
+			*_value = moapi_time_new(sec, usec);
+			return 0;
+		}
+
 		default:
-			rb_raise(rb_eMochiloPackError, "unrecognized custom type 0x%02x\n", custom_type);
 			return -1;
 	}
 }

@@ -153,6 +153,7 @@ enum msgpack_err_t {
 enum mochilo_ext_types_t {
 	MOCHILO_T_SYMBOL,
 	MOCHILO_T_REGEXP,
+	MOCHILO_T_TIME,
 };
 
 typedef void * mo_value;

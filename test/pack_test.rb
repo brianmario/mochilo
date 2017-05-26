@@ -294,8 +294,10 @@ class MochiloPackTest < Minitest::Test
   end
 
   def test_time
-    t = Time.at(1234567890.22)
-    expected = "\xC7\x07\xFF\x02nfi"
+    t = Time.gm(2042, 7, 21, 3, 32, 37, 974010)
+    expected = "\xC7\x11\xFF\x02" +
+      "\x00\x00\x00\x00\x88\x77\x66\x55" + # sec
+      "\x00\x00\x00\x00\x00\x0E\xDC\xBA"   # usec
     assert_equal expected, Mochilo.pack(t)
     assert_equal t, Mochilo.unpack(expected)
   end

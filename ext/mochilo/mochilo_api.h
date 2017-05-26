@@ -23,6 +23,11 @@ MOAPI mo_value moapi_regexp_new(const char *src, size_t len, enum msgpack_enc_t 
 	return (mo_value)re;
 }
 
+MOAPI mo_value moapi_time_new(uint64_t sec, uint64_t usec)
+{
+	return rb_time_new(sec, usec);
+}
+
 MOAPI mo_value moapi_str_new(const char *src, size_t len, enum msgpack_enc_t encoding)
 {
 	int index = 0;
