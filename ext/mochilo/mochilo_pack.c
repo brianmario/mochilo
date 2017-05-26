@@ -73,6 +73,16 @@ void mochilo_pack_bignum(mochilo_buf *buf, VALUE rb_bignum)
 	}
 }
 
+void mochilo_pack_regexp(mochilo_buf *buf, VALUE rb_regexp)
+{
+	rb_raise(rb_eMochiloPackError, "todo: regexp");
+}
+
+void mochilo_pack_time(mochilo_buf *buf, VALUE rb_time)
+{
+	rb_raise(rb_eMochiloPackError, "todo: time");
+}
+
 struct mochilo_hash_pack {
 	mochilo_buf *buf;
 	int trusted;
@@ -268,8 +278,14 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted)
 		mochilo_pack_bignum(buf, rb_object);
 		return;
 
+	case T_REGEXP:
+		mochilo_pack_regexp(buf, rb_object);
+		return;
+
 	default:
-		if (rb_respond_to(rb_object, rb_intern("to_bpack"))) {
+		if (rb_cTime == rb_obj_class(rb_object)) {
+			mochilo_pack_time(buf, rb_object);
+		} else if (rb_respond_to(rb_object, rb_intern("to_bpack"))) {
 			VALUE bpack = rb_funcall(rb_object, rb_intern("to_bpack"), 0);
 
 			mochilo_buf_put(buf, RSTRING_PTR(bpack), RSTRING_LEN(bpack));
