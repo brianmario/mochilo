@@ -114,7 +114,23 @@ void mochilo_pack_symbol(mochilo_buf *buf, VALUE rb_symbol)
 
 void mochilo_pack_regexp(mochilo_buf *buf, VALUE rb_regexp)
 {
-	rb_raise(rb_eMochiloPackError, "todo: regexp");
+	uint32_t options;
+	size_t size;
+	rb_encoding *encoding;
+	char *enc_name;
+	const struct mochilo_enc_map *enc2id;
+
+	encoding = rb_enc_get(rb_regexp);
+	enc_name = rb_enc_name(encoding);
+	enc2id = mochilo_encoding_to_id(enc_name, (unsigned int)strlen(enc_name));
+
+	options = rb_reg_options(rb_regexp);
+	size = RREGEXP_SRC_LEN(rb_regexp);
+
+	mochilo_put_ext_size_and_type(buf, 4 + 1 + size, MOCHILO_T_REGEXP);
+	mochilo_buf_put32be(buf, &options);
+	mochilo_buf_putc(buf, enc2id ? enc2id->id : 0);
+	mochilo_buf_put(buf, RREGEXP_SRC_PTR(rb_regexp), size);
 }
 
 void mochilo_pack_time(mochilo_buf *buf, VALUE rb_time)

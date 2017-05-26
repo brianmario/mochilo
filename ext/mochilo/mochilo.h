@@ -152,6 +152,7 @@ enum msgpack_err_t {
 #define MOCHILO_EXT_TYPE 0xff
 enum mochilo_ext_types_t {
 	MOCHILO_T_SYMBOL,
+	MOCHILO_T_REGEXP,
 };
 
 typedef void * mo_value;

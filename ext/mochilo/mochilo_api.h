@@ -15,6 +15,20 @@ MOAPI mo_value moapi_symbol_new(const char *src, size_t len)
 	return symbol;
 }
 
+MOAPI mo_value moapi_regexp_new(const char *src, size_t len, enum msgpack_enc_t encoding, int reg_options)
+{
+	int index = 0;
+	VALUE re;
+
+	if (encoding < sizeof(mochilo_enc_lookup)/sizeof(mochilo_enc_lookup[0]))
+		index = rb_enc_find_index(mochilo_enc_lookup[encoding]);
+
+	re = rb_reg_new(src, len, reg_options);
+	rb_enc_set_index(re, index);
+
+	return (mo_value)re;
+}
+
 MOAPI mo_value moapi_str_new(const char *src, size_t len, enum msgpack_enc_t encoding)
 {
 	int index = 0;

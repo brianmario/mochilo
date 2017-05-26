@@ -283,7 +283,7 @@ class MochiloPackTest < Minitest::Test
   end
 
   def test_pack_regexp
-    expected = "\xC7\x07\xFF\x01\x00pa.tern"
+    expected = "\xC7\x0D\xFF\x01\x00\x00\x00\x00\x01pa.tern"
     assert_equal expected, Mochilo.pack(/pa.tern/)
     [
       /pa.tern/,
