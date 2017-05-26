@@ -6,13 +6,7 @@ MOAPI mo_value moapi_bytes_new(const char *src, size_t len)
 
 MOAPI mo_value moapi_symbol_new(const char *src, size_t len)
 {
-	char *name = malloc(len + 1);
-	VALUE symbol;
-	strncpy(name, src, len);
-	name[len] = '\0';
-	symbol = ID2SYM(rb_intern(name));
-	free(name);
-	return symbol;
+	return ID2SYM(rb_intern(src));
 }
 
 MOAPI mo_value moapi_regexp_new(const char *src, size_t len, enum msgpack_enc_t encoding, int reg_options)
