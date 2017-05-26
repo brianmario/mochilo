@@ -93,6 +93,13 @@ void mochilo_pack_bignum(mochilo_buf *buf, VALUE rb_bignum)
 	}
 }
 
+static void mochilo_put_ext_size_and_type(mochilo_buf *buf, size_t size, enum mochilo_ext_types_t type)
+{
+	mochilo_buf_put_ext_size(buf, size + 1);
+	mochilo_buf_putc(buf, MOCHILO_EXT_TYPE);
+	mochilo_buf_putc(buf, type);
+}
+
 void mochilo_pack_symbol(mochilo_buf *buf, VALUE rb_symbol)
 {
 	char *symbol_name;
@@ -101,9 +108,7 @@ void mochilo_pack_symbol(mochilo_buf *buf, VALUE rb_symbol)
 	symbol_name = rb_id2name(SYM2ID(rb_symbol));
 	size = strlen(symbol_name);
 
-	mochilo_buf_put_ext_size(buf, size + 1);
-	mochilo_buf_putc(buf, MOCHILO_EXT_TYPE);
-	mochilo_buf_putc(buf, MOCHILO_T_SYMBOL);
+	mochilo_put_ext_size_and_type(buf, size, MOCHILO_T_SYMBOL);
 	mochilo_buf_put(buf, symbol_name, size);
 }
 
