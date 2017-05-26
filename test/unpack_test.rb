@@ -314,4 +314,34 @@ class MochiloUnpackTest < Minitest::Test
     # arr.each {|i| data << (Mochilo.pack(i) + Mochilo.pack(i))}
     # assert_equal hash, Mochilo.unpack(data)
   end
+
+  def test_unpack_custom_types_with_errors
+    # symbol missing the NUL terminator
+    assert_raises Mochilo::UnpackError do
+      Mochilo.unpack("\xC7\x08\xFF\x00symbol\x01")
+    end
+    assert_raises Mochilo::UnpackError do
+      Mochilo.unpack("\xC7\x07\xFF\x00symbol")
+    end
+
+    # regexp missing the last char
+    assert_raises Mochilo::UnpackError do
+      Mochilo.unpack("\xC7\x0D\xFF\x01\x00\x00\x00\x00\x01pa.ter")
+    end
+
+    # time is missing the last char
+    assert_raises Mochilo::UnpackError do
+      Mochilo.unpack("\xC7\x11\xFF\x02\x00\x00\x00\x00\x88\x77\x66\x55\x00\x00\x00\x00\x00\x0E\xDC")
+    end
+
+    # time overflows
+    assert_raises RangeError do
+      Mochilo.unpack("\xC7\x11\xFF\x02\x80\x00\x00\x00\x88\x77\x66\x55\x80\x00\x00\x00\x00\x0E\xDC\xBA")
+    end
+
+    # unknown field
+    assert_raises Mochilo::UnpackError do
+      Mochilo.unpack("\xC7\x07\xFF\x10unknowncustomtype")
+    end
+  end
 end

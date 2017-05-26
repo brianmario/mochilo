@@ -6,6 +6,8 @@
 #include "mochilo.h"
 #include "mochilo_api.h"
 
+extern VALUE rb_eMochiloUnpackError;
+
 static inline int unpack_array(mo_value *_array, size_t elements, mochilo_src *buf)
 {
 	size_t i;
@@ -57,7 +59,6 @@ static inline int unpack_hash(mo_value *_hash, size_t elements, mochilo_src *buf
 	return 0; \
 }
 
-extern VALUE rb_eMochiloPackError;
 static int mochilo_unpack_custom(mo_value *_value, mochilo_src *src, size_t length)
 {
 	uint8_t custom_type;
@@ -116,6 +117,7 @@ static int mochilo_unpack_custom(mo_value *_value, mochilo_src *src, size_t leng
 		}
 
 		default:
+			rb_raise(rb_eMochiloUnpackError, "unknown custom type 0x%02x", custom_type);
 			return -1;
 	}
 }
