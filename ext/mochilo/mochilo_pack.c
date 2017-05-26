@@ -73,6 +73,21 @@ void mochilo_pack_bignum(mochilo_buf *buf, VALUE rb_bignum)
 	}
 }
 
+void mochilo_pack_symbol(mochilo_buf *buf, VALUE rb_symbol)
+{
+	rb_raise(rb_eMochiloPackError, "todo: symbol");
+}
+
+void mochilo_pack_regexp(mochilo_buf *buf, VALUE rb_regexp)
+{
+	rb_raise(rb_eMochiloPackError, "todo: regexp");
+}
+
+void mochilo_pack_time(mochilo_buf *buf, VALUE rb_time)
+{
+	rb_raise(rb_eMochiloPackError, "todo: time");
+}
+
 struct mochilo_hash_pack {
 	mochilo_buf *buf;
 };
@@ -267,9 +282,21 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 		mochilo_pack_bignum(buf, rb_object);
 		return;
 
+	case T_SYMBOL:
+		mochilo_pack_symbol(buf, rb_object);
+		return;
+
+	case T_REGEXP:
+		mochilo_pack_regexp(buf, rb_object);
+		return;
+
 	default:
-		rb_raise(rb_eMochiloPackError,
+		if (rb_cTime == rb_obj_class(rb_object)) {
+			mochilo_pack_time(buf, rb_object);
+		} else {
+			rb_raise(rb_eMochiloPackError,
 				"Unsupported object type: %s", rb_obj_classname(rb_object));
+		}
 		return;
 	}
 }
