@@ -178,6 +178,19 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 			return 0;
 		}
 
+		case MSGPACK_T_TIME:
+		{
+			uint64_t sec;
+			uint64_t usec;
+
+			SRC_ENSURE_AVAIL(src, 16);
+			mochilo_src_get64be(src, &sec);
+			mochilo_src_get64be(src, &usec);
+
+			*_value = moapi_time_new(sec, usec);
+			return 0;
+		}
+
 #ifdef HAVE_RUBY_ENCODING_H
 		case MSGPACK_T_STR16:
 		{

@@ -80,7 +80,15 @@ void mochilo_pack_regexp(mochilo_buf *buf, VALUE rb_regexp)
 
 void mochilo_pack_time(mochilo_buf *buf, VALUE rb_time)
 {
-	rb_raise(rb_eMochiloPackError, "todo: time");
+	uint64_t sec;
+	uint64_t usec;
+
+	sec = NUM2ULONG(rb_funcall(rb_time, rb_intern("to_i"), 0));
+	usec = NUM2ULONG(rb_funcall(rb_time, rb_intern("usec"), 0));
+
+	mochilo_buf_putc(buf, MSGPACK_T_TIME);
+	mochilo_buf_put64be(buf, &sec);
+	mochilo_buf_put64be(buf, &usec);
 }
 
 struct mochilo_hash_pack {

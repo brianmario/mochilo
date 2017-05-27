@@ -18,6 +18,11 @@ MOAPI mo_value moapi_sym_new(const char *src, size_t len)
 	return (mo_value)ID2SYM(rb_intern(symbol));
 }
 
+MOAPI mo_value moapi_time_new(uint64_t sec, uint64_t usec)
+{
+	return (mo_value)rb_time_new(sec, usec);
+}
+
 #ifdef HAVE_RUBY_ENCODING_H
 MOAPI mo_value moapi_str_new(const char *src, size_t len, enum msgpack_enc_t encoding)
 {

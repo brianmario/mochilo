@@ -28,6 +28,7 @@ enum msgpack_t {
 	MSGPACK_T_INT32 = 0xd2,
 	MSGPACK_T_INT64	 = 0xd3,
 	MSGPACK_T_SYM = 0xd4,
+	MSGPACK_T_TIME = 0xd6,
 	MSGPACK_T_STR16 = 0xd8, /* reserved in the spec */
 	MSGPACK_T_STR32 = 0xd9, /* reserved in the spec */
 	MSGPACK_T_RAW16	= 0xda,
