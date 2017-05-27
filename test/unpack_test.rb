@@ -328,7 +328,7 @@ class MochiloUnpackTest < Minitest::Test
     # time overflows
     assert_raises RangeError do
       # set the top bit of the time.....v ...and of usec................v
-      Mochilo.unpack("\xC7\x11\xFF\x02\x80\x00\x00\x00\x88\x77\x66\x55\x80\x00\x00\x00\x00\x0E\xDC\xBA")
+      Mochilo.unpack("\xC7\x15\xFF\x02\x80\x00\x00\x00\x88\x77\x66\x55\x80\x00\x00\x00\x00\x0E\xDC\xBA\xFF\xFF\xFF\xFF")
     end
 
     # unknown field
@@ -342,7 +342,7 @@ class MochiloUnpackTest < Minitest::Test
   def test_unpack_custom_types_with_missing_char
     assert_error_on_truncated_unpack "\xC7\x07\xFF\x00symbol"
     assert_error_on_truncated_unpack "\xC7\x0D\xFF\x01\x00\x00\x00\x00\x01pa.tern"
-    assert_error_on_truncated_unpack "\xC7\x11\xFF\x02\x00\x00\x00\x00\x88\x77\x66\x55\x00\x00\x00\x00\x00\x0E\xDC\xBA"
+    assert_error_on_truncated_unpack "\xC7\x15\xFF\x02\x00\x00\x00\x00\x88\x77\x66\x55\x00\x00\x00\x00\x00\x0E\xDC\xBA\x00\x00\x00\x00"
   end
 
   def assert_error_on_truncated_unpack(packed)

@@ -23,9 +23,11 @@ MOAPI mo_value moapi_regexp_new(const char *src, size_t len, enum msgpack_enc_t 
 	return (mo_value)re;
 }
 
-MOAPI mo_value moapi_time_new(uint64_t sec, uint64_t usec)
+MOAPI mo_value moapi_time_new(uint64_t sec, uint64_t usec, int32_t utc_offset)
 {
-	return rb_time_new(sec, usec);
+	VALUE utc_time = rb_time_new(sec, usec);
+	return (mo_value)rb_funcall(utc_time,
+		rb_intern("getlocal"), 1, INT2FIX(utc_offset));
 }
 
 MOAPI mo_value moapi_str_new(const char *src, size_t len, enum msgpack_enc_t encoding)

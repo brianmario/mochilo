@@ -103,14 +103,16 @@ static int mochilo_unpack_custom(mo_value *_value, mochilo_src *src, size_t leng
 		{
 			uint64_t sec;
 			uint64_t usec;
+			int32_t utc_offset;
 
-			if (length != 16)
+			if (length != 8+8+4)
 				return -1;
 
 			mochilo_src_get64be(src, &sec);
 			mochilo_src_get64be(src, &usec);
+			mochilo_src_get32be(src, &utc_offset);
 
-			*_value = moapi_time_new(sec, usec);
+			*_value = moapi_time_new(sec, usec, utc_offset);
 			return 0;
 		}
 
