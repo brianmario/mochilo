@@ -73,10 +73,39 @@ void mochilo_pack_bignum(mochilo_buf *buf, VALUE rb_bignum)
 	}
 }
 
+#ifdef HAVE_RUBY_ENCODING_H
 void mochilo_pack_regexp(mochilo_buf *buf, VALUE rb_regexp)
 {
-	rb_raise(rb_eMochiloPackError, "todo: regexp");
+	size_t size;
+	rb_encoding *encoding;
+	char *enc_name;
+	const struct mochilo_enc_map *enc2id;
+	uint32_t options;
+	const char *regexp;
+
+	size = RREGEXP_SRC_LEN(rb_regexp);
+
+	if (size < (1<<16)) {
+		uint16_t packed_size = size;
+
+		encoding = rb_enc_get(rb_regexp);
+		enc_name = rb_enc_name(encoding);
+		enc2id = mochilo_encoding_to_id(enc_name, (unsigned int)strlen(enc_name));
+
+		options = rb_reg_options(rb_regexp);
+		regexp = RREGEXP_SRC_PTR(rb_regexp);
+
+		mochilo_buf_putc(buf, MSGPACK_T_REGEXP);
+		mochilo_buf_put16be(buf, &packed_size);
+		mochilo_buf_put32be(buf, &options);
+		mochilo_buf_putc(buf, enc2id ? enc2id->id : 0);
+		mochilo_buf_put(buf, regexp, size);
+	} else {
+		rb_raise(rb_eMochiloPackError,
+			"Regexp too long: must be under %d bytes, %ld given", 1<<16, size);
+	}
 }
+#endif
 
 void mochilo_pack_time(mochilo_buf *buf, VALUE rb_time)
 {
@@ -289,9 +318,11 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted)
 		mochilo_pack_bignum(buf, rb_object);
 		return;
 
+#ifdef HAVE_RUBY_ENCODING_H
 	case T_REGEXP:
 		mochilo_pack_regexp(buf, rb_object);
 		return;
+#endif
 
 	default:
 		if (rb_cTime == rb_obj_class(rb_object)) {

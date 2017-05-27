@@ -18,6 +18,22 @@ MOAPI mo_value moapi_sym_new(const char *src, size_t len)
 	return (mo_value)ID2SYM(rb_intern(symbol));
 }
 
+#ifdef HAVE_RUBY_ENCODING_H
+MOAPI mo_value moapi_regexp_new(const char *src, size_t len, enum msgpack_enc_t encoding, int reg_options)
+{
+	int index = 0;
+	VALUE re;
+
+	if (encoding < sizeof(mochilo_enc_lookup)/sizeof(mochilo_enc_lookup[0]))
+		index = rb_enc_find_index(mochilo_enc_lookup[encoding]);
+
+	re = rb_reg_new(src, len, reg_options);
+	rb_enc_set_index(re, index);
+
+	return (mo_value)re;
+}
+#endif
+
 MOAPI mo_value moapi_time_new(uint64_t sec, uint64_t usec, int32_t utc_offset)
 {
 	VALUE utc_time = rb_time_new(sec, usec);
