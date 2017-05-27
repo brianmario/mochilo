@@ -188,11 +188,15 @@ class MochiloPackTest < MiniTest::Unit::TestCase
   end
 
   def test_time
-    t = Time.gm(2042, 7, 21, 3, 32, 37, 974010)
+    offset = -13*60*60 # I don't know if this is possible. There shouldn't be anything with a greater absolute value.
+    t = Time.gm(2042, 7, 21, 3, 32, 37, 974010).getlocal(offset)
     expected = "\xD6" +
       "\x00\x00\x00\x00\x88\x77\x66\x55" + # sec
-      "\x00\x00\x00\x00\x00\x0E\xDC\xBA"   # usec
+      "\x00\x00\x00\x00\x00\x0E\xDC\xBA" + # usec
+      "\xFF\xFF\x49\x30"                   # utc_offset
     assert_equal expected, Mochilo.pack(t)
-    assert_equal t, Mochilo.unpack(expected)
+    unpacked = Mochilo.unpack(expected)
+    assert_equal t, unpacked
+    assert_equal t.utc_offset, unpacked.utc_offset
   end
 end

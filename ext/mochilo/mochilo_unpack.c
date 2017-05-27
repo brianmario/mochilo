@@ -182,12 +182,14 @@ int mochilo_unpack_one(mo_value *_value, mochilo_src *src)
 		{
 			uint64_t sec;
 			uint64_t usec;
+			int32_t utc_offset;
 
-			SRC_ENSURE_AVAIL(src, 16);
+			SRC_ENSURE_AVAIL(src, 8+8+4);
 			mochilo_src_get64be(src, &sec);
 			mochilo_src_get64be(src, &usec);
+			mochilo_src_get32be(src, &utc_offset);
 
-			*_value = moapi_time_new(sec, usec);
+			*_value = moapi_time_new(sec, usec, utc_offset);
 			return 0;
 		}
 

@@ -82,13 +82,16 @@ void mochilo_pack_time(mochilo_buf *buf, VALUE rb_time)
 {
 	uint64_t sec;
 	uint64_t usec;
+	int32_t utc_offset;
 
 	sec = NUM2ULONG(rb_funcall(rb_time, rb_intern("to_i"), 0));
 	usec = NUM2ULONG(rb_funcall(rb_time, rb_intern("usec"), 0));
+	utc_offset = NUM2INT(rb_funcall(rb_time, rb_intern("utc_offset"), 0));
 
 	mochilo_buf_putc(buf, MSGPACK_T_TIME);
 	mochilo_buf_put64be(buf, &sec);
 	mochilo_buf_put64be(buf, &usec);
+	mochilo_buf_put32be(buf, &utc_offset);
 }
 
 struct mochilo_hash_pack {

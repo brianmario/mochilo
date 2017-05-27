@@ -18,9 +18,11 @@ MOAPI mo_value moapi_sym_new(const char *src, size_t len)
 	return (mo_value)ID2SYM(rb_intern(symbol));
 }
 
-MOAPI mo_value moapi_time_new(uint64_t sec, uint64_t usec)
+MOAPI mo_value moapi_time_new(uint64_t sec, uint64_t usec, int32_t utc_offset)
 {
-	return (mo_value)rb_time_new(sec, usec);
+	VALUE utc_time = rb_time_new(sec, usec);
+	return (mo_value)rb_funcall(utc_time,
+		rb_intern("getlocal"), 1, INT2FIX(utc_offset));
 }
 
 #ifdef HAVE_RUBY_ENCODING_H
