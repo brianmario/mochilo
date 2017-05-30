@@ -10,11 +10,13 @@ A couple of them that are comparable to BananaPack are MessagePack and JSON. To 
 
 JSON has the basic principles of a serialized format that we want. It's only capable of representing primitive data types in common with almost every language. That makes it great for cross-language communication.
 
-The problem is that it's just text. Unicode text to be precise. That means you can't serialize arbitrary binary data without encoding it first. Common practice is to Base64 encode the data first. But then deserialization side *has* to know to unencode it after parsing. There's no need for hacks like this.
+The problem is that it's just text. Unicode text to be precise. That means you can't serialize arbitrary binary data without encoding it first. Common practice is to Base64 encode the data first. But then deserialization side *has* to know to decode it after parsing. There's no need for hacks like this.
 
 ## Why not MessagePack?
 
-MessagePack is nearly perfect for what we want. But text and binary share a single type in the spec, "Raw". That means when deserializing the data you could be reading a contents of a Markdown file, or the contents of a JPEG. There are countless hacks to get around this but there shouldn't be a need for them either.
+MessagePack is nearly perfect for what we want. But it can only differentiate between binary data
+and text that is encoded as UTF-8. We need to support more encodings than that so we can serialize
+it over the wire without the need to put it through potentially lossy transcoding.
 
 ## BananaPack
 
@@ -22,4 +24,4 @@ We wanted something compact and easy to parse. But it also needed to have native
 
 Knowing what encoding text is in is just as important as knowing the timezone of a timestamp. This has been true since the birth of the Internet.
 
-So we used a couple of the "reserved" data type slots in the MessagePack spec to add a String16, String32 and Symbol type. String16 and String32 are exactly the same as the Raw16 and Raw32 types from the MessagePack spec except they have an encoding flag as well. This means that it's possible to serialize text data without hacks. This also means it's possible to serialize the contents of a JPEG without first needing to encode or escape it.
+So we used the new MessagePack spec to add Enc8, Enc16 and Enc32 types. The encoding of the string is stored as a flag in the `type` field of the `ext` type.

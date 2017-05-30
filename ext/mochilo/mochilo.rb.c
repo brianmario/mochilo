@@ -23,9 +23,9 @@ static VALUE rb_eMochiloError;
 VALUE rb_eMochiloPackError;
 VALUE rb_eMochiloUnpackError;
 
-extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted);
+extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
 
-static VALUE rb_mochilo__unpack(VALUE rb_buffer, int trusted)
+static VALUE rb_mochilo__unpack(VALUE rb_buffer)
 {
 	VALUE rb_result;
 	int error = -1;
@@ -35,11 +35,19 @@ static VALUE rb_mochilo__unpack(VALUE rb_buffer, int trusted)
 
 	source.ptr = RSTRING_PTR(rb_buffer);
 	source.end = source.ptr + RSTRING_LEN(rb_buffer);
-	source.trusted = trusted;
 
 	error = mochilo_unpack_one((mo_value)&rb_result, &source);
-	if (error < 0)
-		rb_raise(rb_eMochiloUnpackError, "unpack failed (%d)", error);
+	if (error < 0) {
+		switch (error) {
+			case MSGPACK_EEOF:
+				rb_raise(rb_eMochiloUnpackError, "more data needed");
+			case MSGPACK_EINVALID:
+				rb_raise(rb_eMochiloUnpackError, "invalid or corrupt data");
+			case MSGPACK_ENOTHING:
+			default:
+				rb_raise(rb_eMochiloUnpackError, "unpack failed");
+		}
+	}
 
 	return rb_result;
 }
@@ -53,21 +61,7 @@ static VALUE rb_mochilo__unpack(VALUE rb_buffer, int trusted)
  */
 static VALUE rb_mochilo_unpack(VALUE self, VALUE rb_buffer)
 {
-	return rb_mochilo__unpack(rb_buffer, 0);
-}
-
-/* Document-method: unpack_unsafe
- *
- * call-seq:
- *     Mochilo.unpack_unsafe(banana_pack_str) -> Object
- *
- * Unpacks a BananaPack stream into a Ruby object, in unsafe mode.
- * Only use this function if +banana_pack_str+ is trusted; otherwise
- * symbol DoS attacks are possible.
- */
-static VALUE rb_mochilo_unpack_unsafe(VALUE self, VALUE rb_buffer)
-{
-	return rb_mochilo__unpack(rb_buffer, 1);
+	return rb_mochilo__unpack(rb_buffer);
 }
 
 /* Document-method: pack
@@ -82,25 +76,7 @@ static VALUE rb_mochilo_pack(VALUE self, VALUE rb_obj)
 	mochilo_buf buf;
 
 	mochilo_buf_init(&buf);
-	mochilo_pack_one(&buf, rb_obj, 0);
-	return mochilo_buf_flush(&buf);
-}
-
-/* Document-method: pack
- *
- * call-seq:
- *     Mochilo.pack_unsafe(obj) -> String
- *
- * Packs a Ruby object into BananaPack format, in unsafe mode.
- * This enables the Symbol type durring serialization and will
- * have to be deserialized in unsafe mode as well.
- */
-static VALUE rb_mochilo_pack_unsafe(VALUE self, VALUE rb_obj)
-{
-	mochilo_buf buf;
-
-	mochilo_buf_init(&buf);
-	mochilo_pack_one(&buf, rb_obj, 1);
+	mochilo_pack_one(&buf, rb_obj);
 	return mochilo_buf_flush(&buf);
 }
 
@@ -108,12 +84,9 @@ void Init_mochilo()
 {
 	rb_mMochilo = rb_define_module("Mochilo");
 	rb_define_method(rb_mMochilo, "unpack", rb_mochilo_unpack, 1);
-	rb_define_method(rb_mMochilo, "unpack_unsafe", rb_mochilo_unpack_unsafe, 1);
 	rb_define_method(rb_mMochilo, "pack", rb_mochilo_pack, 1);
-	rb_define_method(rb_mMochilo, "pack_unsafe", rb_mochilo_pack_unsafe, 1);
 
 	rb_eMochiloError = rb_define_class_under(rb_mMochilo, "Error", rb_eStandardError);
 	rb_eMochiloPackError = rb_define_class_under(rb_mMochilo, "PackError", rb_eMochiloError);
 	rb_eMochiloUnpackError = rb_define_class_under(rb_mMochilo, "UnpackError", rb_eMochiloError);
 }
-

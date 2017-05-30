@@ -7,7 +7,7 @@
 
 extern VALUE rb_eMochiloPackError;
 
-void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted);
+void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object);
 
 void mochilo_pack_fixnum(mochilo_buf *buf, VALUE rb_fixnum)
 {
@@ -75,14 +75,13 @@ void mochilo_pack_bignum(mochilo_buf *buf, VALUE rb_bignum)
 
 struct mochilo_hash_pack {
 	mochilo_buf *buf;
-	int trusted;
 };
 
 static int hash_callback(VALUE key, VALUE val, VALUE opaque)
 {
 	struct mochilo_hash_pack *hash_pack = (struct mochilo_hash_pack*)opaque;
-	mochilo_pack_one(hash_pack->buf, key, hash_pack->trusted);
-	mochilo_pack_one(hash_pack->buf, val, hash_pack->trusted);
+	mochilo_pack_one(hash_pack->buf, key);
+	mochilo_pack_one(hash_pack->buf, val);
 	return 0;
 }
 
@@ -93,13 +92,12 @@ void mochilo_pack_double(mochilo_buf *buf, VALUE rb_double)
 	mochilo_buf_put64be(buf, &d);
 }
 
-void mochilo_pack_hash(mochilo_buf *buf, VALUE rb_hash, int trusted)
+void mochilo_pack_hash(mochilo_buf *buf, VALUE rb_hash)
 {
 	struct mochilo_hash_pack hash_pack;
 	long size = RHASH_SIZE(rb_hash);
 
 	hash_pack.buf = buf;
-	hash_pack.trusted = trusted;
 
 	if (size < 0x10) {
 		uint8_t lead = 0x80 | size;
@@ -124,46 +122,26 @@ void mochilo_pack_bytes(mochilo_buf *buf, VALUE rb_bytes)
 {
 	long size = RSTRING_LEN(rb_bytes);
 
-	if (size < 0x20) {
-		uint8_t lead = 0xA0 | size;
+	if (size < 0x100) {
+		uint8_t lead = size;
+		mochilo_buf_putc(buf, MSGPACK_T_BIN8);
 		mochilo_buf_putc(buf, lead);
-	}
-
-	else if (size < 0x10000) {
+	} else if (size < 0x10000) {
 		uint16_t lead = size;
-		mochilo_buf_putc(buf, MSGPACK_T_RAW16);
+		mochilo_buf_putc(buf, MSGPACK_T_BIN16);
 		mochilo_buf_put16be(buf, &lead);
-	}
-
-	else {
-		mochilo_buf_putc(buf, MSGPACK_T_RAW32);
+	} else if (size < 0x100000000) {
+		mochilo_buf_putc(buf, MSGPACK_T_BIN32);
 		mochilo_buf_put32be(buf, &size);
+	} else {
+		// there is no bin 64
+		rb_raise(rb_eMochiloPackError,
+			"Binary string cannot be larger than %ld bytes", 0x100000000);
 	}
 
 	mochilo_buf_put(buf, RSTRING_PTR(rb_bytes), size);
 }
 
-void mochilo_pack_symbol(mochilo_buf *buf, VALUE rb_symbol)
-{
-	long size;
-	const char *name;
-
-	name = rb_id2name(SYM2ID(rb_symbol));
-	size = strlen(name);
-
-	if (size < 0x100) {
-		uint8_t lead = size;
-		mochilo_buf_putc(buf, MSGPACK_T_SYM);
-		mochilo_buf_putc(buf, lead);
-	} else {
-		rb_raise(rb_eMochiloPackError,
-			"Symbol too long: must be under %d bytes, %ld given", 0x100, size);
-	}
-
-	mochilo_buf_put(buf, name, size);
-}
-
-#ifdef HAVE_RUBY_ENCODING_H
 void mochilo_pack_str(mochilo_buf *buf, VALUE rb_str)
 {
 	long size = RSTRING_LEN(rb_str);
@@ -172,27 +150,57 @@ void mochilo_pack_str(mochilo_buf *buf, VALUE rb_str)
 	const struct mochilo_enc_map *enc2id;
 	const char *enc_name;
 
-	if (size < 0x10000) {
-		uint16_t lead = size;
-		mochilo_buf_putc(buf, MSGPACK_T_STR16);
-		mochilo_buf_put16be(buf, &lead);
-	}
-
-	else {
-		mochilo_buf_putc(buf, MSGPACK_T_STR32);
-		mochilo_buf_put32be(buf, &size);
-	}
-
 	encoding = rb_enc_get(rb_str);
 	enc_name = rb_enc_name(encoding);
-	enc2id = mochilo_encoding_to_id(enc_name, (unsigned int)strlen(enc_name));
 
-	mochilo_buf_putc(buf, enc2id ? enc2id->id : 0);
+	if (encoding == rb_utf8_encoding()) {
+		// use str type from msgpack spec
+		if (size < 0x20) {
+			uint8_t lead = 0xa0 | size;
+			mochilo_buf_putc(buf, lead);
+		} else if (size < 0x100) {
+			uint8_t lead = size;
+			mochilo_buf_putc(buf, MSGPACK_T_STR8);
+			mochilo_buf_putc(buf, lead);
+		} else if (size < 0x10000) {
+			uint16_t lead = size;
+			mochilo_buf_putc(buf, MSGPACK_T_STR16);
+			mochilo_buf_put16be(buf, &lead);
+		} else if (size < 0x100000000) {
+			mochilo_buf_putc(buf, MSGPACK_T_STR32);
+			mochilo_buf_put32be(buf, &size);
+		} else {
+			// there is no str 64
+			rb_raise(rb_eMochiloPackError,
+				"String cannot be larger than %ld bytes", 0x100000000);
+		}
+	} else {
+		// if another encoding is used we need to use our custom types
+		if (size < 0x100) {
+			uint8_t lead = size;
+			mochilo_buf_putc(buf, MSGPACK_T_ENC8);
+			mochilo_buf_putc(buf, lead);
+		} else if (size < 0x10000) {
+			uint16_t lead = size;
+			mochilo_buf_putc(buf, MSGPACK_T_ENC16);
+			mochilo_buf_put16be(buf, &lead);
+		} else if (size < 0x100000000) {
+			mochilo_buf_putc(buf, MSGPACK_T_ENC32);
+			mochilo_buf_put32be(buf, &size);
+		} else {
+			// there is no ext 64
+			rb_raise(rb_eMochiloPackError,
+				"String cannot be larger than %ld bytes", 0x100000000);
+		}
+
+		enc2id = mochilo_encoding_to_id(enc_name, (unsigned int)strlen(enc_name));
+		mochilo_buf_putc(buf, enc2id ? enc2id->id : 0);
+	}
+
 	mochilo_buf_put(buf, RSTRING_PTR(rb_str), size);
 }
-#endif
 
-void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array, int trusted)
+void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array)
 {
 	long i, size = RARRAY_LEN(rb_array);
 
@@ -213,11 +221,11 @@ void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array, int trusted)
 	}
 
 	for (i = 0; i < size; i++) {
-		mochilo_pack_one(buf, rb_ary_entry(rb_array, i), trusted);
+		mochilo_pack_one(buf, rb_ary_entry(rb_array, i));
 	}
 }
 
-void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted)
+void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object)
 {
 	switch (rb_type(rb_object)) {
 	case T_NIL:
@@ -236,28 +244,19 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted)
 		mochilo_pack_fixnum(buf, rb_object);
 		return;
 
-	case T_SYMBOL:
-		if (trusted)
-			mochilo_pack_symbol(buf, rb_object);
-		else
-			mochilo_pack_str(buf, rb_obj_as_string(rb_object));
-		return;
-
 	case T_STRING:
-#ifdef HAVE_RUBY_ENCODING_H
 		if (ENCODING_GET(rb_object) != 0)
 			mochilo_pack_str(buf, rb_object);
 		else
-#endif
 			mochilo_pack_bytes(buf, rb_object);
 		return;
 
 	case T_HASH:
-		mochilo_pack_hash(buf, rb_object, trusted);
+		mochilo_pack_hash(buf, rb_object);
 		return;
 
 	case T_ARRAY:
-		mochilo_pack_array(buf, rb_object, trusted);
+		mochilo_pack_array(buf, rb_object);
 		return;
 
 	case T_FLOAT:
@@ -274,4 +273,3 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted)
 		return;
 	}
 }
-

@@ -14,28 +14,32 @@
 #define MOAPI static inline
 
 enum msgpack_t {
-	MSGPACK_T_NIL = 0xc0,
-	MSGPACK_T_FALSE = 0xc2,
-	MSGPACK_T_TRUE = 0xc3,
-	MSGPACK_T_FLOAT = 0xca,
-	MSGPACK_T_DOUBLE = 0xcb,
-	MSGPACK_T_UINT8	= 0xcc,
-	MSGPACK_T_UINT16 = 0xcd,
-	MSGPACK_T_UINT32 = 0xce,
-	MSGPACK_T_UINT64 = 0xcf,
-	MSGPACK_T_INT8 = 0xd0,
-	MSGPACK_T_INT16	 = 0xd1,
-	MSGPACK_T_INT32 = 0xd2,
-	MSGPACK_T_INT64	 = 0xd3,
-	MSGPACK_T_SYM = 0xd4,
-	MSGPACK_T_STR16 = 0xd8, /* reserved in the spec */
-	MSGPACK_T_STR32 = 0xd9, /* reserved in the spec */
-	MSGPACK_T_RAW16	= 0xda,
-	MSGPACK_T_RAW32	 = 0xdb,
+	MSGPACK_T_NIL     = 0xc0,
+	MSGPACK_T_FALSE   = 0xc2,
+	MSGPACK_T_TRUE    = 0xc3,
+	MSGPACK_T_BIN8    = 0xc4,
+	MSGPACK_T_BIN16   = 0xc5,
+	MSGPACK_T_BIN32   = 0xc6,
+	MSGPACK_T_ENC8    = 0xc7,
+	MSGPACK_T_ENC16   = 0xc8,
+	MSGPACK_T_ENC32   = 0xc9,
+	MSGPACK_T_FLOAT   = 0xca,
+	MSGPACK_T_DOUBLE  = 0xcb,
+	MSGPACK_T_UINT8   = 0xcc,
+	MSGPACK_T_UINT16  = 0xcd,
+	MSGPACK_T_UINT32  = 0xce,
+	MSGPACK_T_UINT64  = 0xcf,
+	MSGPACK_T_INT8    = 0xd0,
+	MSGPACK_T_INT16   = 0xd1,
+	MSGPACK_T_INT32   = 0xd2,
+	MSGPACK_T_INT64   = 0xd3,
+	MSGPACK_T_STR8    = 0xd9,
+	MSGPACK_T_STR16   = 0xda,
+	MSGPACK_T_STR32   = 0xdb,
 	MSGPACK_T_ARRAY16 = 0xdc,
 	MSGPACK_T_ARRAY32 = 0xdd,
-	MSGPACK_T_MAP16	= 0xde,
-	MSGPACK_T_MAP32	= 0xdf
+	MSGPACK_T_MAP16   = 0xde,
+	MSGPACK_T_MAP32   = 0xdf
 };
 
 enum msgpack_enc_t {
@@ -143,16 +147,13 @@ enum msgpack_err_t {
 	MSGPACK_EEOF = -1,
 	MSGPACK_EINVALID = -2,
 	MSGPACK_ENOTHING = -3,
-	MSGPACK_EUNSAFE = -4,
 };
 
 typedef void * mo_value;
 typedef uint64_t mo_integer;
 int mochilo_unpack_one(mo_value *_value, mochilo_src *src);
 
-#ifdef HAVE_RUBY_ENCODING_H
-#	include <ruby/encoding.h>
-#	include "encodings.h"
-#endif
+#include <ruby/encoding.h>
+#include "encodings.h"
 
 #endif

@@ -4,7 +4,7 @@ require File.expand_path('../setup', __FILE__)
 require 'mochilo'
 require 'stringio'
 
-class MochiloPackTest < MiniTest::Unit::TestCase
+class MochiloPackTest < Minitest::Test
 
   OBJECTS = [
     {"hello" => "world"},
@@ -52,121 +52,233 @@ class MochiloPackTest < MiniTest::Unit::TestCase
   end
 
   def test_pack_positive_fixed
-    assert_equal "\x15", Mochilo.pack(21)
-  end
-
-  def test_pack_negative_fixed
-    assert_equal "\xEB", Mochilo.pack(-21)
-  end
-
-  def test_pack_uint8
-    assert_equal "\xCC\xD6", Mochilo.pack(214)
-  end
-
-  def test_pack_uint16
-    assert_equal "\xCDS\xE2", Mochilo.pack(21474)
-  end
-
-  def test_pack_uint32
-    assert_equal "\xCE\x7F\xFF\xFF\xFF", Mochilo.pack(2147483647)
-  end
-
-  def test_pack_uint64
-    assert_equal "\xCF\x00\x00\x00\x04\xFF\xFF\xFF\xFF", Mochilo.pack(21474836479)
-  end
-
-  def test_pack_int8
-    assert_equal "\xD0\xDE", Mochilo.pack(-34)
-  end
-
-  def test_pack_int16
-    assert_equal "\xD1\xAC\x1E", Mochilo.pack(-21474)
-  end
-
-  def test_pack_int32
-    assert_equal "\xD2\x80\x00\x00\x01", Mochilo.pack(-2147483647)
-  end
-
-  def test_pack_int64
-    assert_equal "\xD3\xFF\xFF\xFF\xFB\x00\x00\x00\x01", Mochilo.pack(-21474836479)
-  end
-
-  if defined?(Encoding)
-    def test_pack_str16
-      str = "this is a test".force_encoding('UTF-8')
-      assert_equal "\xD8\x00\x0E\x00#{str}", Mochilo.pack(str)
+    [0,127].each do |int|
+      assert_equal int.chr, Mochilo.pack(int)
     end
   end
 
-  def xtest_pack_str32
-    # TODO: not sure how to test this without making a massive 66k string
+  def test_pack_negative_fixed
+    assert_equal "\xFF", Mochilo.pack(-1)
+    assert_equal "\xE0", Mochilo.pack(-32)
   end
 
-  def test_pack_fixed_raw
-    str = "this is a test"
-    assert_equal "\xAE#{str}", Mochilo.pack(str)
+  def test_pack_uint8
+    [128,255].each do |int|
+      assert_equal "\xCC#{int.chr}", Mochilo.pack(int)
+    end
   end
 
-  def test_pack_raw16
-    str = ("a"*255)
-    assert_equal "\xDA\x00\xFF#{str}", Mochilo.pack(str)
+  def test_pack_uint16
+    [256,((2**16)-1)].each do |int|
+      packed = [int].pack("n")
+      assert_equal "\xCD#{packed}", Mochilo.pack(int)
+    end
   end
 
-  def xtest_pack_raw32
-    # TODO: not sure how to test this without making a massive 66k string
+  def test_pack_uint32
+    [(2**16),((2**32)-1)].each do |int|
+      packed = [int].pack("N")
+      assert_equal "\xCE#{packed}", Mochilo.pack(int)
+    end
+  end
+
+  def test_pack_uint64
+    [(2**32),((2**64)-1)].each do |int|
+      packed = [int].pack("Q>")
+      assert_equal "\xCF#{packed}", Mochilo.pack(int)
+    end
+  end
+
+  def test_pack_int8
+    assert_equal "\xD0\xDF", Mochilo.pack(-33)
+    assert_equal "\xD0\x80", Mochilo.pack(-128)
+  end
+
+  def test_pack_int16
+    assert_equal "\xD1\xFF\x7F", Mochilo.pack(-129)
+    assert_equal "\xD1\x80\x00", Mochilo.pack(-32768)
+  end
+
+  def test_pack_int32
+    assert_equal "\xD2\xFF\xFF\x7F\xFF", Mochilo.pack(-32769)
+    assert_equal "\xD2\x80\x00\x00\x00", Mochilo.pack(-2147483648)
+  end
+
+  def test_pack_int64
+    assert_equal "\xD3\xFF\xFF\xFF\xFF\x7F\xFF\xFF\xFF", Mochilo.pack(-2147483649)
+    assert_equal "\xD3\x80\x00\x00\x00\x00\x00\x00\x00", Mochilo.pack(-9223372036854775808)
+  end
+
+  def test_pack_fixed_str
+    str = "a".force_encoding('UTF-8')
+    assert_equal "\xA1#{str}", Mochilo.pack(str)
+
+    str = ("a"*31).force_encoding('UTF-8')
+    assert_equal "\xBF#{str}", Mochilo.pack(str)
+  end
+
+  def test_pack_str8
+    str = ("a"*32).force_encoding('UTF-8')
+    assert_equal "\xD9#{str.bytesize.chr}#{str}", Mochilo.pack(str)
+
+    str = ("a"*255).force_encoding('UTF-8')
+    assert_equal "\xD9#{str.bytesize.chr}#{str}", Mochilo.pack(str)
+  end
+
+  def test_pack_str16
+    str = ("a"*256).force_encoding('UTF-8')
+    assert_equal "\xDA\x01\x00#{str}", Mochilo.pack(str)
+
+    str = ("a"*(2**16-1)).force_encoding('UTF-8')
+    assert_equal "\xDA\xFF\xFF#{str}", Mochilo.pack(str)
+  end
+
+  def test_pack_str32
+    str = ("a"*(2**16)).force_encoding('UTF-8')
+    assert_equal "\xDB\x00\x01\x00\x00#{str}", Mochilo.pack(str)
+
+    # This will create a 4GB string, so let's just skip that ;)
+    # str = ("a"*(2**32-1)).force_encoding('UTF-8')
+    # assert_equal "\xDB\x00\x01\x00\x00#{str}", Mochilo.pack(str)
+  end
+
+  def test_pack_enc8
+    str = ("a"*32).force_encoding('ISO-8859-1')
+    assert_equal "\xC7#{str.bytesize.chr}\x0C#{str}", Mochilo.pack(str)
+
+    str = ("a"*255).force_encoding('ISO-8859-1')
+    assert_equal "\xC7#{str.bytesize.chr}\x0C#{str}", Mochilo.pack(str)
+  end
+
+  def test_pack_enc16
+    str = ("a"*256).force_encoding('ISO-8859-1')
+    assert_equal "\xC8\x01\x00\x0C#{str}", Mochilo.pack(str)
+
+    str = ("a"*(2**16-1)).force_encoding('ISO-8859-1')
+    assert_equal "\xC8\xFF\xFF\x0C#{str}", Mochilo.pack(str)
+  end
+
+  def test_pack_enc32
+    str = ("a"*(2**16)).force_encoding('ISO-8859-1')
+    assert_equal "\xC9\x00\x01\x00\x00\x0C#{str}", Mochilo.pack(str)
+
+    # This would create a 4GB string, so let's just skip that ;)
+    # str = ("a"*(2**32-1)).force_encoding('ISO-8859-1')
+    # assert_equal "\xC9\x00\x01\x00\x00\x0C#{str}", Mochilo.pack(str)
+  end
+
+  def test_pack_bin8
+    str = ("a"*32).force_encoding('binary')
+    assert_equal "\xC4#{str.bytesize.chr}#{str}", Mochilo.pack(str)
+
+    str = ("a"*255).force_encoding('binary')
+    assert_equal "\xC4#{str.bytesize.chr}#{str}", Mochilo.pack(str)
+  end
+
+  def test_pack_bin16
+    str = ("a"*256).force_encoding('binary')
+    assert_equal "\xC5\x01\x00#{str}", Mochilo.pack(str)
+
+    str = ("a"*(2**16-1)).force_encoding('binary')
+    assert_equal "\xC5\xFF\xFF#{str}", Mochilo.pack(str)
+  end
+
+  def test_pack_bin32
+    str = ("a"*(2**16)).force_encoding('binary')
+    assert_equal "\xC6\x00\x01\x00\x00#{str}", Mochilo.pack(str)
+
+    # This would create a 4GB string, so let's just skip that ;)
+    # str = ("a"*(2**32-1)).force_encoding('UTF-8')
+    # assert_equal "\xC6\x00\x01\x00\x00#{str}", Mochilo.pack(str)
   end
 
   def test_pack_fixed_array
     assert_equal "\x90", Mochilo.pack([])
-    assert_equal "\x91\x01", Mochilo.pack([1])
+
+    arr = (1..15).to_a
+    expected = "\x9F"
+    arr.each {|i| expected << Mochilo.pack(i)}
+    assert_equal expected, Mochilo.pack(arr)
   end
 
   def test_pack_array16
-    bytes = ("a"*34).bytes.to_a
-    assert_equal "\xDC\x00\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", Mochilo.pack(bytes)
+    arr = (1..16).to_a
+    expected = "\xDC\x00\x10"
+    arr.each {|i| expected << Mochilo.pack(i)}
+    assert_equal expected, Mochilo.pack(arr)
+
+    arr = (1..2**16-1).to_a
+    expected = "\xDC\xFF\xFF"
+    arr.each {|i| expected << Mochilo.pack(i)}
+    assert_equal expected, Mochilo.pack(arr)
   end
 
-  def xtest_pack_array32
-    # TODO: not sure how to test this without making a massive 66k item array
+  def test_pack_array32
+    arr = (1..2**16).to_a
+    expected = "\xDD\x00\x01\x00\x00"
+    arr.each {|i| expected << Mochilo.pack(i)}
+    assert_equal expected, Mochilo.pack(arr)
+
+    # This would create an array with 4294967295 entries in it, so let's not
+    # arr = (1..2**32-1).to_a
+    # expected = "\xDD\xFF\xFF\xFF\xFF"
+    # arr.each {|i| expected << Mochilo.pack(i)}
+    # assert_equal expected, Mochilo.pack(arr)
   end
 
   def test_pack_fixed_map
     assert_equal "\x80", Mochilo.pack({})
-    assert_equal "\x81\x01\x02", Mochilo.pack({1 => 2})
-  end
 
-  def test_pack_symbol
-    assert_equal "\xD8\x00\x04\x01test", Mochilo.pack(:test)
-    assert_equal "\xD4\x04test", Mochilo.pack_unsafe(:test)
-  end
-
-  def test_pack_symbol_size
-    too_big = ("a"*0x100).to_sym
-    fine = ("a"*0xff).to_sym
-
-    assert_raises Mochilo::PackError do
-      Mochilo.pack_unsafe(too_big)
-    end
-
-    begin
-      Mochilo.pack_unsafe(fine)
-    rescue Mochilo::PackError => boom
-      assert_nil boom, "exception raised, expected nothing"
-    end
+    arr = (1..15).to_a
+    hash = {}
+    arr.each {|i| hash[i] = i }
+    expected = "\x8F"
+    arr.each {|i| expected << (Mochilo.pack(i) + Mochilo.pack(i))}
+    assert_equal expected, Mochilo.pack(hash)
   end
 
   def test_pack_map16
-    bytes = ("a"*34).bytes.to_a
-    assert_equal "\xDC\x00\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", Mochilo.pack(bytes)
+    arr = (1..16).to_a
+    hash = {}
+    arr.each {|i| hash[i] = i }
+    expected = "\xDE\x00\x10"
+    arr.each {|i| expected << (Mochilo.pack(i) + Mochilo.pack(i))}
+    assert_equal expected, Mochilo.pack(hash)
+
+    arr = (1..2**16-1).to_a
+    hash = {}
+    arr.each {|i| hash[i] = i }
+    expected = "\xDE\xFF\xFF"
+    arr.each {|i| expected << (Mochilo.pack(i) + Mochilo.pack(i))}
+    assert_equal expected, Mochilo.pack(hash)
   end
 
   def test_pack_map32
-    # TODO: not sure how to test this without making a massive 66k item hash
+    arr = (1..2**16).to_a
+    hash = {}
+    arr.each {|i| hash[i] = i }
+    expected = "\xDF\x00\x01\x00\x00"
+    arr.each {|i| expected << (Mochilo.pack(i) + Mochilo.pack(i))}
+    assert_equal expected, Mochilo.pack(hash)
+
+    # This would create a hash with 4294967295 entries in it, so let's not
+    # arr = (1..2**32-1).to_a
+    # hash = {}
+    # arr.each {|i| hash[i] = i }
+    # expected = "\xDF\xFF\xFF\xFF\xFF"
+    # arr.each {|i| expected << (Mochilo.pack(i) + Mochilo.pack(i))}
+    # assert_equal expected, Mochilo.pack(hash)
   end
 
   def test_pack_unsupported_type
     assert_raises Mochilo::PackError do
       Mochilo.pack(Object.new)
+    end
+  end
+
+  def test_pack_symbol_fails
+    assert_raises Mochilo::PackError do
+      Mochilo.pack(:symbol)
     end
   end
 end
