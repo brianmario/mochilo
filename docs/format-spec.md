@@ -17,6 +17,32 @@ Length is stored in unsigned 8-bit integer.
 => XXXXXXXX (=N) bytes of raw bytes.
 ```
 
+#### Regexp
+
+Stores a regular expression, with options and encoding, up to (2^16)-1 bytes long.
+
+```
++--------+--------+--------+--------+--------+--------+--------+--------+----------
+|  0xd5  |XXXXXXXX|XXXXXXXX|YYYYYYYY|YYYYYYYY|YYYYYYYY|YYYYYYYY|ZZZZZZZZ|...N bytes
++--------+--------+--------+--------+--------+--------+--------+--------+----------
+=> XXXXXXXX_XXXXXXXX (=N) bytes of raw bytes.
+=> YYYYYYYY_YYYYYYYY_YYYYYYYY_YYYYYYYY 32-bit int options
+=> ZZZZZZZZ encoding flag
+```
+
+#### Time
+
+Stores a Ruby time, with usec resolution and UTC offset.
+
+```
++--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+
+|  0xd6  |XXXXXXXX|XXXXXXXX|XXXXXXXX|XXXXXXXX|XXXXXXXX|XXXXXXXX|XXXXXXXX|XXXXXXXX|YYYYYYYY|YYYYYYYY|YYYYYYYY|YYYYYYYY|YYYYYYYY|YYYYYYYY|YYYYYYYY|YYYYYYYY|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|ZZZZZZZZ|
++--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+
+=> XXXXXXXX_XXXXXXXX_XXXXXXXX_XXXXXXXX_XXXXXXXX_XXXXXXXX_XXXXXXXX_XXXXXXXX 64-bit unsigned seconds since the epoch
+=> YYYYYYYY_YYYYYYYY_YYYYYYYY_YYYYYYYY_YYYYYYYY_YYYYYYYY_YYYYYYYY_YYYYYYYY 64-bit unsigned microseconds
+=> ZZZZZZZZ_ZZZZZZZZ_ZZZZZZZZ_ZZZZZZZZ 32-bit signed seconds offset from UTC
+```
+
 #### String16
 
 For storing text up to (2^16)-1 bytes.
