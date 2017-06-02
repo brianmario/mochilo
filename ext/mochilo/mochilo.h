@@ -149,6 +149,13 @@ enum msgpack_err_t {
 	MSGPACK_ENOTHING = -3,
 };
 
+#define MOCHILO_EXT_TYPE 0xff
+enum mochilo_ext_types_t {
+	MOCHILO_T_SYMBOL,
+	MOCHILO_T_REGEXP,
+	MOCHILO_T_TIME,
+};
+
 typedef void * mo_value;
 typedef uint64_t mo_integer;
 int mochilo_unpack_one(mo_value *_value, mochilo_src *src);

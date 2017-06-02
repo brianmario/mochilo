@@ -4,6 +4,32 @@ MOAPI mo_value moapi_bytes_new(const char *src, size_t len)
 	return (mo_value)rb_str_new(src, len);
 }
 
+MOAPI mo_value moapi_symbol_new(const char *src, size_t len)
+{
+	return ID2SYM(rb_intern2(src, len));
+}
+
+MOAPI mo_value moapi_regexp_new(const char *src, size_t len, enum msgpack_enc_t encoding, int reg_options)
+{
+	int index = 0;
+	VALUE re;
+
+	if (encoding < sizeof(mochilo_enc_lookup)/sizeof(mochilo_enc_lookup[0]))
+		index = rb_enc_find_index(mochilo_enc_lookup[encoding]);
+
+	re = rb_reg_new(src, len, reg_options);
+	rb_enc_set_index(re, index);
+
+	return (mo_value)re;
+}
+
+MOAPI mo_value moapi_time_new(uint64_t sec, uint64_t usec, int32_t utc_offset)
+{
+	VALUE utc_time = rb_time_new(sec, usec);
+	return (mo_value)rb_funcall(utc_time,
+		rb_intern("getlocal"), 1, INT2FIX(utc_offset));
+}
+
 MOAPI mo_value moapi_str_new(const char *src, size_t len, enum msgpack_enc_t encoding)
 {
 	int index = 0;

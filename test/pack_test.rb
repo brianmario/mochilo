@@ -276,9 +276,32 @@ class MochiloPackTest < Minitest::Test
     end
   end
 
-  def test_pack_symbol_fails
-    assert_raises Mochilo::PackError do
-      Mochilo.pack(:symbol)
+  def test_pack_symbol
+    expected = "\xC7\x07\xFF\x00symbol"
+    assert_equal expected, Mochilo.pack(:symbol)
+    assert_equal :symbol, Mochilo.unpack(expected)
+  end
+
+  def test_pack_regexp
+    expected = "\xC7\x0D\xFF\x01\x00\x00\x00\x00\x01pa.tern"
+    assert_equal expected, Mochilo.pack(/pa.tern/)
+    [
+      /pa.tern/,
+      /thing/im,
+    ].each do |re|
+      assert_equal re, Mochilo.unpack(Mochilo.pack(re))
     end
+  end
+
+  def test_time
+    offset = -13*60*60 # I don't know if this is possible. There shouldn't be anything with a greater absolute value.
+    t = Time.gm(2042, 7, 21, 3, 32, 37, 974010).getlocal(offset)
+    expected = "\xC7\x15\xFF\x02" +
+      "\x00\x00\x00\x00\x88\x77\x66\x55" + # sec
+      "\x00\x00\x00\x00\x00\x0E\xDC\xBA" + # usec
+      "\xFF\xFF\x49\x30"                   # utc_offset
+    assert_equal expected, Mochilo.pack(t)
+    assert_equal t, Mochilo.unpack(expected)
+    assert_equal offset, Mochilo.unpack(expected).utc_offset
   end
 end
