@@ -73,6 +73,56 @@ void mochilo_pack_bignum(mochilo_buf *buf, VALUE rb_bignum)
 	}
 }
 
+#ifdef HAVE_RUBY_ENCODING_H
+void mochilo_pack_regexp(mochilo_buf *buf, VALUE rb_regexp)
+{
+	size_t size;
+	rb_encoding *encoding;
+	char *enc_name;
+	const struct mochilo_enc_map *enc2id;
+	uint32_t options;
+	const char *regexp;
+
+	size = RREGEXP_SRC_LEN(rb_regexp);
+
+	if (size < (1<<16)) {
+		uint16_t packed_size = size;
+
+		encoding = rb_enc_get(rb_regexp);
+		enc_name = rb_enc_name(encoding);
+		enc2id = mochilo_encoding_to_id(enc_name, (unsigned int)strlen(enc_name));
+
+		options = rb_reg_options(rb_regexp);
+		regexp = RREGEXP_SRC_PTR(rb_regexp);
+
+		mochilo_buf_putc(buf, MSGPACK_T_REGEXP);
+		mochilo_buf_put16be(buf, &packed_size);
+		mochilo_buf_put32be(buf, &options);
+		mochilo_buf_putc(buf, enc2id ? enc2id->id : 0);
+		mochilo_buf_put(buf, regexp, size);
+	} else {
+		rb_raise(rb_eMochiloPackError,
+			"Regexp too long: must be under %d bytes, %ld given", 1<<16, size);
+	}
+}
+#endif
+
+void mochilo_pack_time(mochilo_buf *buf, VALUE rb_time)
+{
+	uint64_t sec;
+	uint64_t usec;
+	int32_t utc_offset;
+
+	sec = NUM2ULONG(rb_funcall(rb_time, rb_intern("to_i"), 0));
+	usec = NUM2ULONG(rb_funcall(rb_time, rb_intern("usec"), 0));
+	utc_offset = NUM2INT(rb_funcall(rb_time, rb_intern("utc_offset"), 0));
+
+	mochilo_buf_putc(buf, MSGPACK_T_TIME);
+	mochilo_buf_put64be(buf, &sec);
+	mochilo_buf_put64be(buf, &usec);
+	mochilo_buf_put32be(buf, &utc_offset);
+}
+
 struct mochilo_hash_pack {
 	mochilo_buf *buf;
 	int trusted;
@@ -268,8 +318,16 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted)
 		mochilo_pack_bignum(buf, rb_object);
 		return;
 
+#ifdef HAVE_RUBY_ENCODING_H
+	case T_REGEXP:
+		mochilo_pack_regexp(buf, rb_object);
+		return;
+#endif
+
 	default:
-		if (rb_respond_to(rb_object, rb_intern("to_bpack"))) {
+		if (rb_cTime == rb_obj_class(rb_object)) {
+			mochilo_pack_time(buf, rb_object);
+		} else if (rb_respond_to(rb_object, rb_intern("to_bpack"))) {
 			VALUE bpack = rb_funcall(rb_object, rb_intern("to_bpack"), 0);
 
 			mochilo_buf_put(buf, RSTRING_PTR(bpack), RSTRING_LEN(bpack));

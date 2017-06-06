@@ -175,4 +175,28 @@ class MochiloPackTest < MiniTest::Unit::TestCase
       Mochilo.pack(Object.new)
     end
   end
+
+  def test_pack_regexp
+    expected = "\xD5\x00\x07\x00\x00\x00\x00\x01pa.tern"
+    assert_equal expected, Mochilo.pack(/pa.tern/)
+    [
+      /pa.tern/,
+      /thing/im,
+    ].each do |re|
+      assert_equal re, Mochilo.unpack(Mochilo.pack(re))
+    end
+  end
+
+  def test_time
+    offset = -13*60*60 # I don't know if this is possible. There shouldn't be anything with a greater absolute value.
+    t = Time.gm(2042, 7, 21, 3, 32, 37, 974010).getlocal(offset)
+    expected = "\xD6" +
+      "\x00\x00\x00\x00\x88\x77\x66\x55" + # sec
+      "\x00\x00\x00\x00\x00\x0E\xDC\xBA" + # usec
+      "\xFF\xFF\x49\x30"                   # utc_offset
+    assert_equal expected, Mochilo.pack(t)
+    unpacked = Mochilo.unpack(expected)
+    assert_equal t, unpacked
+    assert_equal t.utc_offset, unpacked.utc_offset
+  end
 end
