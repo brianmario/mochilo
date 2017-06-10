@@ -156,4 +156,18 @@ class MochiloUnpackTest < MiniTest::Unit::TestCase
   def test_unpack_map32
     # TODO: not sure how to test this without making a massive 66k item hash
   end
+
+  def test_unpack_time_compat
+    t = Time.at 1234567890
+    packed = Mochilo.pack(t)
+    assert_equal t, Mochilo.unpack(packed)
+    assert_equal t, Mochilo::Compat_1_2.unpack(packed)
+  end
+
+  def test_unpack_regex_compat
+    re = /hi/i
+    packed = Mochilo.pack(re)
+    assert_equal re, Mochilo.unpack(packed)
+    assert_equal re, Mochilo::Compat_1_2.unpack(packed)
+  end
 end

@@ -148,6 +148,11 @@ enum msgpack_err_t {
 	MSGPACK_EUNSAFE = -4,
 };
 
+typedef enum mochilo_pack_opts_t {
+	MOCHILO_PACK_TRUSTED = 1<<0,
+	MOCHILO_PACK_V_1_3 = 1<<1,
+} mochilo_pack_opts_t;
+
 typedef void * mo_value;
 typedef uint64_t mo_integer;
 int mochilo_unpack_one(mo_value *_value, mochilo_src *src);
