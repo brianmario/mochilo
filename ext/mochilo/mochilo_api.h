@@ -18,7 +18,6 @@ MOAPI mo_value moapi_sym_new(const char *src, size_t len)
 	return (mo_value)ID2SYM(rb_intern(symbol));
 }
 
-#ifdef HAVE_RUBY_ENCODING_H
 MOAPI mo_value moapi_regexp_new(const char *src, size_t len, enum msgpack_enc_t encoding, int reg_options)
 {
 	int index = 0;
@@ -32,7 +31,6 @@ MOAPI mo_value moapi_regexp_new(const char *src, size_t len, enum msgpack_enc_t 
 
 	return (mo_value)re;
 }
-#endif
 
 MOAPI mo_value moapi_time_new(uint64_t sec, uint64_t usec, int32_t utc_offset)
 {
@@ -41,7 +39,6 @@ MOAPI mo_value moapi_time_new(uint64_t sec, uint64_t usec, int32_t utc_offset)
 		rb_intern("getlocal"), 1, INT2FIX(utc_offset));
 }
 
-#ifdef HAVE_RUBY_ENCODING_H
 MOAPI mo_value moapi_str_new(const char *src, size_t len, enum msgpack_enc_t encoding)
 {
 	int index = 0;
@@ -55,7 +52,6 @@ MOAPI mo_value moapi_str_new(const char *src, size_t len, enum msgpack_enc_t enc
 
 	return (mo_value)str;
 }
-#endif
 
 MOAPI mo_value moapi_array_new(size_t array_size)
 {
