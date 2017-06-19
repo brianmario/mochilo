@@ -199,4 +199,16 @@ class MochiloPackTest < MiniTest::Unit::TestCase
     assert_equal t, unpacked
     assert_equal t.utc_offset, unpacked.utc_offset
   end
+
+  def test_pack_1_2_time
+    assert_raises Mochilo::PackError do
+      Mochilo::Compat_1_2.pack(Time.now)
+    end
+  end
+
+  def test_pack_1_2_regexp
+    assert_raises Mochilo::PackError do
+      Mochilo::Compat_1_2.pack(/hi/)
+    end
+  end
 end

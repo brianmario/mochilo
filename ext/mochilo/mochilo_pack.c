@@ -7,7 +7,7 @@
 
 extern VALUE rb_eMochiloPackError;
 
-void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted);
+void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, mochilo_pack_opts_t opts);
 
 void mochilo_pack_fixnum(mochilo_buf *buf, VALUE rb_fixnum)
 {
@@ -73,7 +73,6 @@ void mochilo_pack_bignum(mochilo_buf *buf, VALUE rb_bignum)
 	}
 }
 
-#ifdef HAVE_RUBY_ENCODING_H
 void mochilo_pack_regexp(mochilo_buf *buf, VALUE rb_regexp)
 {
 	size_t size;
@@ -105,7 +104,6 @@ void mochilo_pack_regexp(mochilo_buf *buf, VALUE rb_regexp)
 			"Regexp too long: must be under %d bytes, %ld given", 1<<16, size);
 	}
 }
-#endif
 
 void mochilo_pack_time(mochilo_buf *buf, VALUE rb_time)
 {
@@ -125,14 +123,14 @@ void mochilo_pack_time(mochilo_buf *buf, VALUE rb_time)
 
 struct mochilo_hash_pack {
 	mochilo_buf *buf;
-	int trusted;
+	mochilo_pack_opts_t opts;
 };
 
 static int hash_callback(VALUE key, VALUE val, VALUE opaque)
 {
 	struct mochilo_hash_pack *hash_pack = (struct mochilo_hash_pack*)opaque;
-	mochilo_pack_one(hash_pack->buf, key, hash_pack->trusted);
-	mochilo_pack_one(hash_pack->buf, val, hash_pack->trusted);
+	mochilo_pack_one(hash_pack->buf, key, hash_pack->opts);
+	mochilo_pack_one(hash_pack->buf, val, hash_pack->opts);
 	return 0;
 }
 
@@ -143,13 +141,13 @@ void mochilo_pack_double(mochilo_buf *buf, VALUE rb_double)
 	mochilo_buf_put64be(buf, &d);
 }
 
-void mochilo_pack_hash(mochilo_buf *buf, VALUE rb_hash, int trusted)
+void mochilo_pack_hash(mochilo_buf *buf, VALUE rb_hash, mochilo_pack_opts_t opts)
 {
 	struct mochilo_hash_pack hash_pack;
 	long size = RHASH_SIZE(rb_hash);
 
 	hash_pack.buf = buf;
-	hash_pack.trusted = trusted;
+	hash_pack.opts = opts;
 
 	if (size < 0x10) {
 		uint8_t lead = 0x80 | size;
@@ -213,7 +211,6 @@ void mochilo_pack_symbol(mochilo_buf *buf, VALUE rb_symbol)
 	mochilo_buf_put(buf, name, size);
 }
 
-#ifdef HAVE_RUBY_ENCODING_H
 void mochilo_pack_str(mochilo_buf *buf, VALUE rb_str)
 {
 	long size = RSTRING_LEN(rb_str);
@@ -240,9 +237,8 @@ void mochilo_pack_str(mochilo_buf *buf, VALUE rb_str)
 	mochilo_buf_putc(buf, enc2id ? enc2id->id : 0);
 	mochilo_buf_put(buf, RSTRING_PTR(rb_str), size);
 }
-#endif
 
-void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array, int trusted)
+void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array, mochilo_pack_opts_t opts)
 {
 	long i, size = RARRAY_LEN(rb_array);
 
@@ -263,13 +259,17 @@ void mochilo_pack_array(mochilo_buf *buf, VALUE rb_array, int trusted)
 	}
 
 	for (i = 0; i < size; i++) {
-		mochilo_pack_one(buf, rb_ary_entry(rb_array, i), trusted);
+		mochilo_pack_one(buf, rb_ary_entry(rb_array, i), opts);
 	}
 }
 
-void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted)
+void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, mochilo_pack_opts_t opts)
 {
-	switch (rb_type(rb_object)) {
+	int trusted = opts & MOCHILO_PACK_TRUSTED;
+	int v13types = opts & MOCHILO_PACK_V_1_3;
+	int rb_obj_type = rb_type(rb_object);
+
+	switch (rb_obj_type) {
 	case T_NIL:
 		mochilo_buf_putc(buf, MSGPACK_T_NIL);
 		return;
@@ -294,11 +294,9 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted)
 		return;
 
 	case T_STRING:
-#ifdef HAVE_RUBY_ENCODING_H
 		if (ENCODING_GET(rb_object) != 0)
 			mochilo_pack_str(buf, rb_object);
 		else
-#endif
 			mochilo_pack_bytes(buf, rb_object);
 		return;
 
@@ -318,14 +316,10 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted)
 		mochilo_pack_bignum(buf, rb_object);
 		return;
 
-#ifdef HAVE_RUBY_ENCODING_H
-	case T_REGEXP:
-		mochilo_pack_regexp(buf, rb_object);
-		return;
-#endif
-
 	default:
-		if (rb_cTime == rb_obj_class(rb_object)) {
+		if (v13types && rb_obj_type == T_REGEXP) {
+			mochilo_pack_regexp(buf, rb_object);
+		} else if (v13types && rb_cTime == rb_obj_class(rb_object)) {
 			mochilo_pack_time(buf, rb_object);
 		} else if (rb_respond_to(rb_object, rb_intern("to_bpack"))) {
 			VALUE bpack = rb_funcall(rb_object, rb_intern("to_bpack"), 0);

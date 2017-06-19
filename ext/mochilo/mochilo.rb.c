@@ -19,11 +19,12 @@
 #define CSTR2SYM(s) (ID2SYM(rb_intern((s))))
 
 static VALUE rb_mMochilo;
+static VALUE rb_mMochiloCompat12;
 static VALUE rb_eMochiloError;
 VALUE rb_eMochiloPackError;
 VALUE rb_eMochiloUnpackError;
 
-extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, int trusted);
+extern void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, mochilo_pack_opts_t opts);
 
 static VALUE rb_mochilo__unpack(VALUE rb_buffer, int trusted)
 {
@@ -82,11 +83,11 @@ static VALUE rb_mochilo_pack(VALUE self, VALUE rb_obj)
 	mochilo_buf buf;
 
 	mochilo_buf_init(&buf);
-	mochilo_pack_one(&buf, rb_obj, 0);
+	mochilo_pack_one(&buf, rb_obj, MOCHILO_PACK_V_1_3);
 	return mochilo_buf_flush(&buf);
 }
 
-/* Document-method: pack
+/* Document-method: pack_unsafe
  *
  * call-seq:
  *     Mochilo.pack_unsafe(obj) -> String
@@ -100,7 +101,45 @@ static VALUE rb_mochilo_pack_unsafe(VALUE self, VALUE rb_obj)
 	mochilo_buf buf;
 
 	mochilo_buf_init(&buf);
-	mochilo_pack_one(&buf, rb_obj, 1);
+	mochilo_pack_one(&buf, rb_obj, MOCHILO_PACK_V_1_3|MOCHILO_PACK_TRUSTED);
+	return mochilo_buf_flush(&buf);
+}
+
+/* Document-method: pack
+ *
+ * call-seq:
+ *     Mochilo::Compat_1_2.pack(obj) -> String
+ *
+ * Packs a Ruby object into BananaPack format, without
+ * support for the new types (Time, Regexp) that were
+ * added in 1.3.
+ */
+static VALUE rb_mochilo_pack_1_2(VALUE self, VALUE rb_obj)
+{
+	mochilo_buf buf;
+
+	mochilo_buf_init(&buf);
+	mochilo_pack_one(&buf, rb_obj, 0);
+	return mochilo_buf_flush(&buf);
+}
+
+/* Document-method: pack_unsafe
+ *
+ * call-seq:
+ *     Mochilo.pack_unsafe(obj) -> String
+ *
+ * Packs a Ruby object into BananaPack format, without
+ * support for the new types (Time, Regexp) that were
+ * added in 1.3, in unsafe mode.
+ * This enables the Symbol type durring serialization and will
+ * have to be deserialized in unsafe mode as well.
+ */
+static VALUE rb_mochilo_pack_unsafe_1_2(VALUE self, VALUE rb_obj)
+{
+	mochilo_buf buf;
+
+	mochilo_buf_init(&buf);
+	mochilo_pack_one(&buf, rb_obj, MOCHILO_PACK_TRUSTED);
 	return mochilo_buf_flush(&buf);
 }
 
@@ -111,6 +150,12 @@ void Init_mochilo()
 	rb_define_method(rb_mMochilo, "unpack_unsafe", rb_mochilo_unpack_unsafe, 1);
 	rb_define_method(rb_mMochilo, "pack", rb_mochilo_pack, 1);
 	rb_define_method(rb_mMochilo, "pack_unsafe", rb_mochilo_pack_unsafe, 1);
+
+	rb_mMochiloCompat12 = rb_define_module_under(rb_mMochilo, "Compat_1_2");
+	rb_define_method(rb_mMochiloCompat12, "unpack", rb_mochilo_unpack, 1);
+	rb_define_method(rb_mMochiloCompat12, "unpack_unsafe", rb_mochilo_unpack_unsafe, 1);
+	rb_define_method(rb_mMochiloCompat12, "pack", rb_mochilo_pack_1_2, 1);
+	rb_define_method(rb_mMochiloCompat12, "pack_unsafe", rb_mochilo_pack_unsafe_1_2, 1);
 
 	rb_eMochiloError = rb_define_class_under(rb_mMochilo, "Error", rb_eStandardError);
 	rb_eMochiloPackError = rb_define_class_under(rb_mMochilo, "PackError", rb_eMochiloError);
