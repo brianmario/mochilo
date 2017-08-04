@@ -301,11 +301,11 @@ void mochilo_pack_one(mochilo_buf *buf, VALUE rb_object, mochilo_pack_opts_t opt
 		return;
 
 	case T_HASH:
-		mochilo_pack_hash(buf, rb_object, trusted);
+		mochilo_pack_hash(buf, rb_object, opts);
 		return;
 
 	case T_ARRAY:
-		mochilo_pack_array(buf, rb_object, trusted);
+		mochilo_pack_array(buf, rb_object, opts);
 		return;
 
 	case T_FLOAT:

@@ -200,6 +200,12 @@ class MochiloPackTest < MiniTest::Unit::TestCase
     assert_equal t.utc_offset, unpacked.utc_offset
   end
 
+  def test_nested
+    re = /anything/
+    t = Time.gm(1234567890)
+    assert_equal [{t => re}], Mochilo.unpack(Mochilo.pack([{t => re}]))
+  end
+
   def test_pack_1_2_time
     assert_raises Mochilo::PackError do
       Mochilo::Compat_1_2.pack(Time.now)
