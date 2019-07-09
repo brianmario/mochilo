@@ -40,3 +40,7 @@ If any other object type is encountered during serialization, an exception is ra
 * false
 * Array
 * Hash
+* Regexp
+* Time
+
+*note:* Symbol is supported as well, but is unpacked as String
