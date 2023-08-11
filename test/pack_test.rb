@@ -4,7 +4,7 @@ require File.expand_path('../setup', __FILE__)
 require 'mochilo'
 require 'stringio'
 
-class MochiloPackTest < MiniTest::Unit::TestCase
+class MochiloPackTest < Minitest::Test
 
   OBJECTS = [
     {"hello" => "world"},

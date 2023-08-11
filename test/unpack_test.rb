@@ -3,7 +3,7 @@ require File.expand_path('../setup', __FILE__)
 
 require 'mochilo'
 
-class MochiloUnpackTest < MiniTest::Unit::TestCase
+class MochiloUnpackTest < Minitest::Test
   BUFFERS = [
     "\xCC\x80",
     "\xCD\x04\xD2",
