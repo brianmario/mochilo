@@ -174,4 +174,19 @@ class MochiloUnpackTest < Minitest::Test
     assert_equal re, Mochilo.unpack(packed)
     assert_equal re, Mochilo::Compat_1_2.unpack(packed)
   end
+
+  def test_unpack_multibyte_strings_of_various_sizes
+    # Check a variety of sizes
+    0.upto(2000) do |size|
+      contents = "a"*size
+      contents.force_encoding("UTF-16BE")
+      packed = Mochilo.pack(contents)
+      unpacked = Mochilo.unpack(packed)
+
+      # Regression test: previously crashed on Ruby 3.2
+      unpacked.b
+
+      assert_equal contents, unpacked
+    end
+  end
 end

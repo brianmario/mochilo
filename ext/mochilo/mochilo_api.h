@@ -20,14 +20,15 @@ MOAPI mo_value moapi_sym_new(const char *src, size_t len)
 
 MOAPI mo_value moapi_regexp_new(const char *src, size_t len, enum msgpack_enc_t encoding, int reg_options)
 {
-	int index = 0;
+	rb_encoding *rbencoding = NULL;
 	VALUE re;
 
 	if (encoding < sizeof(mochilo_enc_lookup)/sizeof(mochilo_enc_lookup[0]))
-		index = rb_enc_find_index(mochilo_enc_lookup[encoding]);
+		rbencoding = rb_enc_find(mochilo_enc_lookup[encoding]);
+	else
+		rbencoding = rb_ascii8bit_encoding();
 
-	re = rb_reg_new(src, len, reg_options);
-	rb_enc_set_index(re, index);
+	re = rb_enc_reg_new(src, len, rbencoding, reg_options);
 
 	return (mo_value)re;
 }
@@ -41,14 +42,15 @@ MOAPI mo_value moapi_time_new(uint64_t sec, uint64_t usec, int32_t utc_offset)
 
 MOAPI mo_value moapi_str_new(const char *src, size_t len, enum msgpack_enc_t encoding)
 {
-	int index = 0;
+	rb_encoding *rbencoding = NULL;
 	VALUE str;
 
 	if (encoding < sizeof(mochilo_enc_lookup)/sizeof(mochilo_enc_lookup[0]))
-		index = rb_enc_find_index(mochilo_enc_lookup[encoding]);
+		rbencoding = rb_enc_find(mochilo_enc_lookup[encoding]);
+	else
+		rbencoding = rb_ascii8bit_encoding();
 
-	str = rb_str_new(src, len);
-	rb_enc_set_index(str, index);
+	str = rb_enc_str_new(src, len, rbencoding);
 
 	return (mo_value)str;
 }
