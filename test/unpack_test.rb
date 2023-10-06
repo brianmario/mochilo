@@ -3,7 +3,7 @@ require File.expand_path('../setup', __FILE__)
 
 require 'mochilo'
 
-class MochiloUnpackTest < MiniTest::Unit::TestCase
+class MochiloUnpackTest < Minitest::Test
   BUFFERS = [
     "\xCC\x80",
     "\xCD\x04\xD2",
@@ -31,12 +31,16 @@ class MochiloUnpackTest < MiniTest::Unit::TestCase
       a = Mochilo.unpack(buf)
       b = Mochilo.pack(a)
       c = Mochilo.unpack(b)
-      assert_equal a, c
+      if a.nil?
+        assert_nil c
+      else
+        assert_equal a, c
+      end
     end
   end
 
   def test_unpack_nil
-    assert_equal nil, Mochilo.unpack("\xC0")
+    assert_nil Mochilo.unpack("\xC0")
   end
 
   def test_unpack_true
@@ -61,7 +65,7 @@ class MochiloUnpackTest < MiniTest::Unit::TestCase
   end
 
   def test_unpack_negative_fixed
-    assert_equal -21, Mochilo.unpack("\xEB")
+    assert_equal(-21, Mochilo.unpack("\xEB"))
   end
 
   def test_unpack_uint8
@@ -81,19 +85,19 @@ class MochiloUnpackTest < MiniTest::Unit::TestCase
   end
 
   def test_unpack_int8
-    assert_equal -34, Mochilo.unpack("\xD0\xDE")
+    assert_equal(-34, Mochilo.unpack("\xD0\xDE"))
   end
 
   def test_unpack_int16
-    assert_equal -21474, Mochilo.unpack("\xD1\xAC\x1E")
+    assert_equal(-21474, Mochilo.unpack("\xD1\xAC\x1E"))
   end
 
   def test_unpack_int32
-    assert_equal -2147483647, Mochilo.unpack("\xD2\x80\x00\x00\x01")
+    assert_equal(-2147483647, Mochilo.unpack("\xD2\x80\x00\x00\x01"))
   end
 
   def test_unpack_int64
-    assert_equal -21474836479, Mochilo.unpack("\xD3\xFF\xFF\xFF\xFB\x00\x00\x00\x01")
+    assert_equal(-21474836479, Mochilo.unpack("\xD3\xFF\xFF\xFF\xFB\x00\x00\x00\x01"))
   end
 
   if defined?(Encoding)
@@ -169,5 +173,20 @@ class MochiloUnpackTest < MiniTest::Unit::TestCase
     packed = Mochilo.pack(re)
     assert_equal re, Mochilo.unpack(packed)
     assert_equal re, Mochilo::Compat_1_2.unpack(packed)
+  end
+
+  def test_unpack_multibyte_strings_of_various_sizes
+    # Check a variety of sizes
+    0.upto(2000) do |size|
+      contents = "a"*size
+      contents.force_encoding("UTF-16BE")
+      packed = Mochilo.pack(contents)
+      unpacked = Mochilo.unpack(packed)
+
+      # Regression test: previously crashed on Ruby 3.2
+      unpacked.b
+
+      assert_equal contents, unpacked
+    end
   end
 end
