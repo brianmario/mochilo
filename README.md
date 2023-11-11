@@ -31,15 +31,15 @@ The following Ruby types are supported. Meaning they will be deserialized into t
 
 If any other object type is encountered during serialization, an exception is raised. This is to ensure you have explicit control over what is being serialized.
 
-* Fixnum
+* Array
 * Bignum
+* Fixnum
 * Float
+* Hash
+* Regexp
 * String (with encoding)
 * Symbol
+* Time
 * nil
 * true
 * false
-* Array
-* Hash
-* Regexp
-* Time
