@@ -6,7 +6,7 @@ MOAPI mo_value moapi_bytes_new(const char *src, size_t len)
 
 MOAPI mo_value moapi_symbol_new(const char *src, size_t len)
 {
-	return ID2SYM(rb_intern2(src, len));
+	return (mo_value)ID2SYM(rb_intern2(src, len));
 }
 
 MOAPI mo_value moapi_regexp_new(const char *src, size_t len, enum msgpack_enc_t encoding, int reg_options)

@@ -36,7 +36,7 @@ class MochiloUnpackTest < Minitest::Test
   end
 
   def test_unpack_nil
-    assert_equal nil, Mochilo.unpack("\xC0")
+    assert_nil Mochilo.unpack("\xC0")
   end
 
   def test_unpack_false
@@ -63,8 +63,8 @@ class MochiloUnpackTest < Minitest::Test
   end
 
   def test_unpack_negative_fixed
-    assert_equal -1, Mochilo.unpack("\xFF")
-    assert_equal -32, Mochilo.unpack("\xE0")
+    assert_equal(-1, Mochilo.unpack("\xFF"))
+    assert_equal(-32, Mochilo.unpack("\xE0"))
   end
 
   def test_unpack_uint8
@@ -95,23 +95,23 @@ class MochiloUnpackTest < Minitest::Test
   end
 
   def test_unpack_int8
-    assert_equal -33, Mochilo.unpack("\xD0\xDF")
-    assert_equal -128, Mochilo.unpack("\xD0\x80")
+    assert_equal(-33, Mochilo.unpack("\xD0\xDF"))
+    assert_equal(-128, Mochilo.unpack("\xD0\x80"))
   end
 
   def test_unpack_int16
-    assert_equal -129, Mochilo.unpack("\xD1\xFF\x7F")
-    assert_equal -32768, Mochilo.unpack("\xD1\x80\x00")
+    assert_equal(-129, Mochilo.unpack("\xD1\xFF\x7F"))
+    assert_equal(-32768, Mochilo.unpack("\xD1\x80\x00"))
   end
 
   def test_unpack_int32
-    assert_equal -32769, Mochilo.unpack("\xD2\xFF\xFF\x7F\xFF")
-    assert_equal -2147483648, Mochilo.unpack("\xD2\x80\x00\x00\x00")
+    assert_equal(-32769, Mochilo.unpack("\xD2\xFF\xFF\x7F\xFF"))
+    assert_equal(-2147483648, Mochilo.unpack("\xD2\x80\x00\x00\x00"))
   end
 
   def test_unpack_int64
-    assert_equal -2147483649, Mochilo.unpack("\xD3\xFF\xFF\xFF\xFF\x7F\xFF\xFF\xFF")
-    assert_equal -9223372036854775808, Mochilo.unpack("\xD3\x80\x00\x00\x00\x00\x00\x00\x00")
+    assert_equal(-2147483649, Mochilo.unpack("\xD3\xFF\xFF\xFF\xFF\x7F\xFF\xFF\xFF"))
+    assert_equal(-9223372036854775808, Mochilo.unpack("\xD3\x80\x00\x00\x00\x00\x00\x00\x00"))
   end
 
   def test_unpack_fixed_str

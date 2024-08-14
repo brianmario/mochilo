@@ -7,3 +7,4 @@
 /.bundle
 /.rbenv-version
 /vendor/cache/*.gem
+Gemfile.lock
